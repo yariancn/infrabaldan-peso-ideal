@@ -111,7 +111,7 @@
 </div>
 
 <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby2SuDrfs9yk1SeVZrEZJ7IuqRBTRMSgY24eCCXRM54W9AUVjwzEfDwMhEBOUObSJUQ/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuz2wnYl2QT2AhvYbTI1eM3jnzYOiVkigRvvD2WRzd1cOS0mQMHCf9_43Ppc2z3pzo/exec";
 
   let clientes = [];
   let clienteActual = null;
@@ -146,27 +146,16 @@
     renderLista();
   }
 
-  // ==================== CARGAR DESDE GOOGLE SHEETS ====================
+  // ==================== CARGAR CLIENTES ====================
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
-      const data = await res.json();
-      clientes = data.map(row => ({
-        id: row[0],
-        nombre: row[1],
-        sexo: row[2],
-        edad: row[3],
-        altura: row[4],
-        peso: row[5],
-        grasa: row[6],
-        grasaObjetivo: row[7],
-        fechaInicio: row[8],
-        avances: []
-      }));
+      if (!res.ok) throw new Error("Error de conexión");
+      clientes = await res.json();
       renderLista();
     } catch (e) {
-      console.error("Error cargando clientes", e);
-      alert("No se pudieron cargar los clientes. Revisa la conexión.");
+      console.error(e);
+      alert("No se pudieron cargar los clientes.\nRevisa que el Apps Script esté desplegado correctamente.");
     }
   }
 
@@ -184,19 +173,24 @@
     };
 
     try {
-      await fetch(WEB_APP_URL, {
+      const res = await fetch(WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify({ action: "guardarCliente", cliente: cliente })
       });
-      alert("Cliente guardado correctamente");
-      cerrarModal();
-      cargarClientes();
+
+      const result = await res.json();
+      if (result.success) {
+        alert("Cliente guardado correctamente");
+        cerrarModal();
+        cargarClientes();
+      } else {
+        alert("Error: " + (result.message || "Desconocido"));
+      }
     } catch (e) {
-      alert("Error al guardar cliente");
+      alert("Error de conexión al guardar. Revisa tu internet.");
     }
   }
 
-  // ==================== OTRAS FUNCIONES (render, detalle, etc.) ====================
   function renderLista() {
     const filtro = document.getElementById('buscar').value.toLowerCase().trim();
     const container = document.getElementById('listaClientes');
@@ -230,6 +224,10 @@
       card.onclick = () => verDetalle(c);
       container.appendChild(card);
     });
+
+    if (filtrados.length === 0 && filtro !== '') {
+      container.innerHTML = `<p class="col-span-3 text-center text-gray-500 py-12">No se encontraron clientes</p>`;
+    }
   }
 
   function verDetalle(c) {
@@ -238,18 +236,23 @@
 
     const calc = calcularIdeal(c);
     const unidad = usaLibras ? "lbs" : "kg";
+    const semanasTrans = c.fechaInicio ? Math.floor((new Date() - new Date(c.fechaInicio)) / (1000*60*60*24*7)) : 0;
 
-    const semanasTrans = c.fechaInicio 
-      ? Math.floor((new Date() - new Date(c.fechaInicio)) / (1000 * 60 * 60 * 24 * 7)) 
-      : 0;
+    document.getElementById('resumenCalculo').innerHTML = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(c.peso)} ${unidad}</div></div>
+        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
+        <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
+        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div></div>
+      </div>
+    `;
 
-    const pesoActual = c.peso;
-    const totalABajar = parseFloat(calc.kgBajar);
-    const bajado = 0; // Temporal - se mejorará cuando carguemos avances
-    const progresoPorcentaje = totalABajar > 0 ? Math.round((bajado / totalABajar) * 100) : 0;
-
-    // Resumen y progreso (simplificado por ahora)
-    document.getElementById('resumenCalculo').innerHTML = `...`; // Puedes expandir después
+    document.getElementById('progresoContainer').innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-3xl p-6 text-center">
+        <p class="text-gray-500 text-sm">Progreso (en desarrollo)</p>
+        <p class="text-2xl font-bold text-green-600 mt-2">Próximamente</p>
+      </div>
+    `;
 
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
     document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
@@ -257,10 +260,15 @@
     document.getElementById('modalDetalle').classList.remove('hidden');
   }
 
-  function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
-  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); }
+  function cerrarModal() { 
+    document.getElementById('modalCliente').classList.add('hidden'); 
+  }
 
-  // Cargar clientes al iniciar
+  function cerrarDetalle() { 
+    document.getElementById('modalDetalle').classList.add('hidden'); 
+  }
+
+  // Inicializar
   window.onload = () => {
     cargarClientes();
   };
