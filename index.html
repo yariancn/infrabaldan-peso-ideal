@@ -24,12 +24,10 @@
       <span>+</span> Nuevo Cliente
     </button>
     
-    <div class="flex gap-3">
-      <button onclick="toggleUnidades()" id="btnUnidades"
-              class="bg-white border border-gray-300 px-5 py-2 rounded-2xl text-sm font-medium">
-        Unidades: <span id="unidadActual">kg / cm</span>
-      </button>
-    </div>
+    <button onclick="toggleUnidades()" id="btnUnidades"
+            class="bg-white border border-gray-300 px-5 py-2 rounded-2xl text-sm font-medium">
+      Unidades: <span id="unidadActual">kg / cm</span>
+    </button>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
@@ -44,7 +42,7 @@
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
 
       <div class="grid grid-cols-2 gap-4">
-        <select id="sexo" class="px-4 py-3 border rounded-2xl">
+        <select id="sexo" onchange="actualizarGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
           <option value="M">Hombre</option>
           <option value="F">Mujer</option>
         </select>
@@ -59,7 +57,9 @@
 
       <div>
         <label class="block text-sm text-gray-600 mb-1">Porcentaje de grasa ideal</label>
-        <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
+        <input id="grasaObjetivo" type="number" step="0.1" value="15" 
+               class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
+        <p class="text-xs text-gray-500 mt-1">Se ajusta automáticamente según el sexo</p>
       </div>
     </div>
 
@@ -70,7 +70,7 @@
   </div>
 </div>
 
-<!-- Modal Detalle + Gráfica + Avances -->
+<!-- Modal Detalle -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
@@ -80,7 +80,6 @@
 
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
 
-    <!-- Registrar avance -->
     <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
     <div class="grid grid-cols-3 gap-4 mb-8">
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
@@ -102,29 +101,30 @@
   let clientes = JSON.parse(localStorage.getItem('clientesBaldan')) || [];
   let clienteActual = null;
   let chartInstance = null;
-  let usaLibras = false;   // false = kg/cm   true = lbs/inches
+  let usaLibras = false;
 
-  const logoUrl = "https://i.imgur.com/0zqX8zL.jpg"; // Tu logo
-
-  function convertirUnidades(valor, aLibras) {
-    return aLibras ? (valor * 2.20462).toFixed(1) : (valor / 2.20462).toFixed(1);
-  }
-
-  function convertirAltura(valor, aInches) {
-    return aInches ? (valor / 2.54).toFixed(1) : (valor * 2.54).toFixed(0);
+  function actualizarGrasaIdeal() {
+    const sexo = document.getElementById('sexo').value;
+    const grasaIdealInput = document.getElementById('grasaObjetivo');
+    grasaIdealInput.value = sexo === 'M' ? 15 : 22;
   }
 
   function calcularIdeal(c) {
-    const peso = parseFloat(c.peso);
-    const grasa = parseFloat(c.grasa);
-    const target = parseFloat(c.grasaObjetivo) || (c.sexo === 'M' ? 15 : 22);
+    const peso = parseFloat(c.peso) || 0;
+    const grasaActual = parseFloat(c.grasa) || 0;
+    const grasaIdeal = parseFloat(c.grasaObjetivo) || (c.sexo === 'M' ? 15 : 22);
 
-    const lbm = peso * (1 - grasa / 100);
-    const ideal = lbm / (1 - target / 100);
-    const bajar = Math.max(0, peso - ideal);
-    const semanas = bajar > 0 ? Math.ceil(bajar) : 0;
+    const masaMagra = peso * (1 - grasaActual / 100);
+    const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
+    const kgBajar = Math.max(0, peso - pesoIdeal);
+    const semanas = kgBajar > 0 ? Math.ceil(kgBajar) : 0;
 
-    return { ideal: ideal.toFixed(1), bajar: bajar.toFixed(1), semanas, target };
+    return {
+      pesoIdeal: pesoIdeal.toFixed(1),
+      kgBajar: kgBajar.toFixed(1),
+      semanas: semanas,
+      grasaIdeal: grasaIdeal
+    };
   }
 
   function toggleUnidades() {
@@ -139,23 +139,34 @@
 
     clientes.forEach((c, i) => {
       const calc = calcularIdeal(c);
-      const pesoDisplay = usaLibras ? convertirUnidades(c.peso, true) : c.peso;
-      const alturaDisplay = usaLibras ? convertirAltura(c.altura, true) : c.altura;
-      const unidadPeso = usaLibras ? "lbs" : "kg";
-      const unidadAlt = usaLibras ? "in" : "cm";
+      const pesoDisplay = usaLibras ? (c.peso * 2.20462).toFixed(1) : c.peso;
+      const unidad = usaLibras ? "lbs" : "kg";
 
       const card = document.createElement('div');
       card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
       card.innerHTML = `
         <div class="font-semibold text-xl mb-1">${c.nombre}</div>
         <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
-        <div class="mt-5 grid grid-cols-2 gap-y-3 text-sm">
-          <div>Actual:</div>
-          <div class="font-medium">${pesoDisplay} ${unidadPeso} (${c.grasa}% grasa)</div>
-          <div>Ideal:</div>
-          <div class="font-medium">${calc.ideal} ${unidadPeso}</div>
-          <div class="col-span-2 text-xs bg-amber-100 text-amber-800 rounded-2xl px-4 py-2 mt-2">
-            Bajar ${calc.bajar} ${unidadPeso} → ${calc.semanas} semanas (1 kg/sem)
+        
+        <div class="mt-6 space-y-3">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Peso actual</span>
+            <span class="font-medium">${pesoDisplay} ${unidad}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Grasa actual</span>
+            <span class="font-medium">${c.grasa}%</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Grasa ideal</span>
+            <span class="font-medium text-blue-600">${calc.grasaIdeal}%</span>
+          </div>
+          <div class="flex justify-between pt-3 border-t">
+            <span class="text-gray-600">Peso ideal</span>
+            <span class="font-semibold">${calc.pesoIdeal} ${unidad}</span>
+          </div>
+          <div class="bg-amber-100 text-amber-800 text-xs rounded-2xl px-4 py-3">
+            Debe bajar <strong>${calc.kgBajar} ${unidad}</strong> → <strong>${calc.semanas} semanas</strong> (1 kg/semana)
           </div>
         </div>
       `;
@@ -173,7 +184,7 @@
     document.getElementById('altura').value = '';
     document.getElementById('peso').value = '';
     document.getElementById('grasa').value = '';
-    document.getElementById('grasaObjetivo').value = 15;
+    actualizarGrasaIdeal();   // Ajusta automáticamente a 15%
     document.getElementById('modalCliente').classList.remove('hidden');
   }
 
@@ -185,7 +196,7 @@
       altura: parseFloat(document.getElementById('altura').value) || 170,
       peso: parseFloat(document.getElementById('peso').value) || 80,
       grasa: parseFloat(document.getElementById('grasa').value) || 25,
-      grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value) || 15,
+      grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value) || (document.getElementById('sexo').value === 'M' ? 15 : 22),
       avances: clienteActual ? clienteActual.avances : []
     };
 
@@ -208,19 +219,27 @@
     const unidad = usaLibras ? "lbs" : "kg";
 
     document.getElementById('resumenCalculo').innerHTML = `
-      <div class="grid grid-cols-3 gap-6 text-center">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         <div>
           <div class="text-xs text-gray-500">PESO ACTUAL</div>
-          <div class="text-4xl font-bold">${clienteActual.peso} ${unidad}</div>
+          <div class="text-3xl font-bold">${clienteActual.peso} ${unidad}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500">GRASA ACTUAL</div>
+          <div class="text-3xl font-bold">${clienteActual.grasa}%</div>
         </div>
         <div>
           <div class="text-xs text-gray-500">GRASA IDEAL</div>
-          <div class="text-4xl font-bold">${calc.target}%</div>
+          <div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div>
         </div>
         <div>
-          <div class="text-xs text-gray-500">TIEMPO EST.</div>
-          <div class="text-4xl font-bold">${calc.semanas} sem</div>
+          <div class="text-xs text-gray-500">PESO IDEAL</div>
+          <div class="text-3xl font-bold">${calc.pesoIdeal} ${unidad}</div>
         </div>
+      </div>
+      <div class="mt-6 text-center text-sm bg-white rounded-2xl p-4 border">
+        Debe bajar <strong>${calc.kgBajar} ${unidad}</strong> de grasa para alcanzar su objetivo<br>
+        Tiempo estimado: <strong>${calc.semanas} semanas</strong> (perdiendo 1 kg por semana)
       </div>
     `;
 
@@ -228,32 +247,27 @@
     renderHistorialYGrafica();
   }
 
+  // === Funciones de Avances y Gráfica (sin cambios mayores) ===
   function renderHistorialYGrafica() {
-    // Código del historial y gráfica (mismo que antes, lo mantengo funcional)
     const tbody = document.getElementById('tablaHistorial');
     tbody.innerHTML = `<tr class="bg-gray-100"><th class="px-4 py-3 text-left">Fecha</th><th class="px-4 py-3 text-left">Peso</th><th class="px-4 py-3 text-left">% Grasa</th></tr>`;
 
-    const fechas = [], pesos = [], grasas = [];
+    const fechas = [], pesos = [];
 
     (clienteActual.avances || []).forEach(a => {
       const row = document.createElement('tr');
       row.className = "border-b hover:bg-gray-50";
       row.innerHTML = `<td class="px-4 py-3">${a.fecha}</td><td class="px-4 py-3">${a.peso} ${usaLibras ? 'lbs' : 'kg'}</td><td class="px-4 py-3">${a.grasa}%</td>`;
       tbody.appendChild(row);
-
       fechas.push(a.fecha);
       pesos.push(a.peso);
-      grasas.push(a.grasa);
     });
 
     if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(document.getElementById('grafica'), {
       type: 'line',
-      data: {
-        labels: fechas,
-        datasets: [{ label: 'Peso', data: pesos, borderColor: '#0ea5e9', tension: 0.3 }]
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: false }}}
+      data: { labels: fechas, datasets: [{ label: 'Peso', data: pesos, borderColor: '#0ea5e9', tension: 0.3 }] },
+      options: { responsive: true, scales: { y: { beginAtZero: false } }}
     });
   }
 
@@ -277,7 +291,7 @@
   }
 
   function eliminarClienteActual() {
-    if (confirm("¿Eliminar este cliente permanentemente?")) {
+    if (confirm("¿Eliminar este cliente y todo su historial?")) {
       clientes.splice(clienteActual.index, 1);
       localStorage.setItem('clientesBaldan', JSON.stringify(clientes));
       cerrarDetalle();
@@ -291,10 +305,7 @@
     clienteActual = null; 
   }
 
-  // Inicializar
-  window.onload = () => {
-    renderLista();
-  };
+  window.onload = () => renderLista();
 </script>
 </body>
 </html>
