@@ -6,6 +6,12 @@
   <title>Infra Baldan - Oxy Hyperbaric</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    #graficaContainer {
+      max-height: 180px;
+      position: relative;
+    }
+  </style>
 </head>
 <body class="bg-gray-50">
 
@@ -99,9 +105,11 @@
     </div>
 
     <!-- Gráfica pequeña y contenida -->
-    <div class="mt-6 border border-gray-200 rounded-2xl p-4 bg-white">
+    <div class="mt-6">
       <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
-      <canvas id="grafica" height="140"></canvas>
+      <div id="graficaContainer" class="border border-gray-200 rounded-2xl p-4 bg-white">
+        <canvas id="grafica" height="130"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -225,30 +233,30 @@
 
     document.getElementById('modalDetalle').classList.remove('hidden');
 
-    // Gráfica pequeña y contenida
+    // Gráfica pequeña
     setTimeout(() => {
-      const canvas = document.getElementById('grafica');
+      let canvas = document.getElementById('grafica');
       if (canvas) canvas.remove();
 
-      const newCanvas = document.createElement('canvas');
-      newCanvas.id = 'grafica';
-      newCanvas.height = 140;
-      document.getElementById('modalDetalle').appendChild(newCanvas);
+      canvas = document.createElement('canvas');
+      canvas.id = 'grafica';
+      canvas.height = 130;
+      document.getElementById('graficaContainer').appendChild(canvas);
 
-      new Chart(newCanvas, {
+      new Chart(canvas, {
         type: 'line',
         data: {
           labels: ['Inicio', 'Actual'],
           datasets: [
             {
               label: 'Peso Real',
-              data: [c.peso, c.peso],
+              data: [parseFloat(c.peso), parseFloat(c.peso)],
               borderColor: '#0ea5e9',
               tension: 0.3
             },
             {
               label: 'Peso Ideal',
-              data: [calc.pesoIdeal, calc.pesoIdeal],
+              data: [parseFloat(calc.pesoIdeal), parseFloat(calc.pesoIdeal)],
               borderColor: '#10b981',
               borderDash: [5, 5]
             }
@@ -256,13 +264,12 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: { y: { beginAtZero: false } },
-          plugins: {
-            legend: { position: 'top' }
-          }
+          plugins: { legend: { position: 'top', labels: { boxWidth: 12, padding: 15 } } }
         }
       });
-    }, 200);
+    }, 150);
   }
 
   function nuevoCliente() {
