@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Infra Baldan - Oxy Hyperbaric</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-gray-50">
 
@@ -97,6 +98,8 @@
       <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
       <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
+
+    <canvas id="grafica" height="160"></canvas>
   </div>
 </div>
 
@@ -104,6 +107,9 @@
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
+  let clienteActual = null;
+  let chartInstance = null;
+  let usaLibras = false;
 
   function actualizarGrasaIdeal() {
     const sexo = document.getElementById('sexo').value;
@@ -119,6 +125,16 @@
     const kgBajar = Math.max(0, peso - pesoIdeal);
     const semanas = kgBajar > 0 ? Math.ceil(kgBajar) : 0;
     return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), semanas, grasaIdeal };
+  }
+
+  function convertirPeso(pesoKg) {
+    return usaLibras ? (pesoKg * 2.20462).toFixed(1) : parseFloat(pesoKg).toFixed(1);
+  }
+
+  function toggleUnidades() {
+    usaLibras = !usaLibras;
+    document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
+    renderLista();
   }
 
   async function cargarClientes() {
@@ -186,11 +202,12 @@
   }
 
   function verDetalle(c) {
+    clienteActual = c;
     document.getElementById('nombreDetalle').textContent = c.nombre;
 
     const calc = calcularIdeal(c);
 
-    // Resumen completo
+    // Resumen
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${c.peso} kg</div></div>
@@ -201,7 +218,7 @@
     `;
 
     // Barra de progreso
-    const progresoPorcentaje = 0; // Temporal (se calculará cuando tengamos avances)
+    const progresoPorcentaje = 0;
     document.getElementById('progresoContainer').innerHTML = `
       <div class="bg-white border border-gray-200 rounded-3xl p-6">
         <div class="flex justify-between items-center mb-3">
@@ -220,7 +237,42 @@
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
     document.getElementById('semanasTranscurridas').textContent = "0 semanas";
 
+    // Gráfica simple (solo peso ideal por ahora)
     document.getElementById('modalDetalle').classList.remove('hidden');
+
+    // Crear gráfica básica
+    setTimeout(() => {
+      const ctx = document.createElement('canvas');
+      ctx.id = 'grafica';
+      ctx.height = 140;
+      document.getElementById('modalDetalle').querySelector('canvas') ? document.getElementById('modalDetalle').querySelector('canvas').remove() : null;
+      document.getElementById('modalDetalle').appendChild(ctx);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Inicio', 'Actual'],
+          datasets: [
+            {
+              label: 'Peso Real',
+              data: [c.peso, c.peso],
+              borderColor: '#0ea5e9',
+              tension: 0.3
+            },
+            {
+              label: 'Peso Ideal',
+              data: [calc.pesoIdeal, calc.pesoIdeal],
+              borderColor: '#10b981',
+              borderDash: [5, 5]
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: false } }
+        }
+      });
+    }, 300);
   }
 
   function nuevoCliente() {
