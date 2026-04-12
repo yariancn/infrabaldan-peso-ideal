@@ -66,41 +66,11 @@
   </div>
 </div>
 
-<!-- Modal Detalle -->
-<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
-      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black">×</button>
-    </div>
-
-    <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
-
-    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
-      <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Fecha de inicio</div>
-        <div class="font-medium" id="fechaInicio"></div>
-      </div>
-      <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Semanas transcurridas</div>
-        <div class="font-medium" id="semanasTranscurridas"></div>
-      </div>
-    </div>
-
-    <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
-    <div class="grid grid-cols-3 gap-4 mb-8">
-      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
-      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
-      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
-      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
-    </div>
-  </div>
-</div>
-
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
+  let usaLibras = false;
 
   function actualizarGrasaIdeal() {
     const sexo = document.getElementById('sexo').value;
@@ -156,35 +126,22 @@
   }
 
   function renderLista() {
+    const filtro = document.getElementById('buscar').value.toLowerCase().trim();
     const container = document.getElementById('listaClientes');
     container.innerHTML = '';
 
-    clientes.forEach((c) => {
+    const filtrados = clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
+
+    filtrados.forEach((c) => {
       const card = document.createElement('div');
       card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
       card.innerHTML = `
         <div class="font-semibold text-xl mb-1">${c.nombre}</div>
         <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
       `;
-      card.onclick = () => verDetalle(c);
+      card.onclick = () => alert("Cliente seleccionado: " + c.nombre + "\n\nDetalle completo en desarrollo");
       container.appendChild(card);
     });
-  }
-
-  function verDetalle(c) {
-    document.getElementById('nombreDetalle').textContent = c.nombre;
-
-    document.getElementById('resumenCalculo').innerHTML = `
-      <div class="grid grid-cols-2 gap-6 text-center">
-        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${c.peso} kg</div></div>
-        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
-      </div>
-    `;
-
-    document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
-    document.getElementById('semanasTranscurridas').textContent = "0 semanas";
-
-    document.getElementById('modalDetalle').classList.remove('hidden');
   }
 
   function nuevoCliente() {
@@ -202,8 +159,10 @@
     document.getElementById('modalCliente').classList.add('hidden');
   }
 
-  function cerrarDetalle() {
-    document.getElementById('modalDetalle').classList.add('hidden');
+  function toggleUnidades() {
+    usaLibras = !usaLibras;
+    document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
+    alert("Cambio de unidades a " + (usaLibras ? "lbs" : "kg") + " (funcionalidad básica)");
   }
 
   window.onload = () => {
