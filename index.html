@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Infra Baldan - Oxy Hyperbaric</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-gray-50">
 
@@ -66,15 +67,72 @@
   </div>
 </div>
 
+<!-- Modal Detalle Completo -->
+<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
+      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black">×</button>
+    </div>
+
+    <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
+
+    <div id="progresoContainer" class="mb-8"></div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Fecha de inicio</div>
+        <div class="font-medium" id="fechaInicio"></div>
+      </div>
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Semanas transcurridas</div>
+        <div class="font-medium" id="semanasTranscurridas"></div>
+      </div>
+    </div>
+
+    <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
+      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
+      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
+      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
+    </div>
+
+    <canvas id="grafica" height="140"></canvas>
+  </div>
+</div>
+
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
+  let clienteActual = null;
   let usaLibras = false;
 
   function actualizarGrasaIdeal() {
     const sexo = document.getElementById('sexo').value;
     document.getElementById('grasaObjetivo').value = sexo === 'M' ? 15 : 22;
+  }
+
+  function calcularIdeal(c) {
+    const peso = parseFloat(c.peso) || 0;
+    const grasaActual = parseFloat(c.grasa) || 0;
+    const grasaIdeal = parseFloat(c.grasaObjetivo) || (c.sexo === 'M' ? 15 : 22);
+    const masaMagra = peso * (1 - grasaActual / 100);
+    const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
+    const kgBajar = Math.max(0, peso - pesoIdeal);
+    const semanas = kgBajar > 0 ? Math.ceil(kgBajar) : 0;
+    return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), semanas, grasaIdeal };
+  }
+
+  function convertirPeso(pesoKg) {
+    return usaLibras ? (pesoKg * 2.20462).toFixed(1) : parseFloat(pesoKg).toFixed(1);
+  }
+
+  function toggleUnidades() {
+    usaLibras = !usaLibras;
+    document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
+    renderLista();
   }
 
   async function cargarClientes() {
@@ -133,36 +191,79 @@
     const filtrados = clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
 
     filtrados.forEach((c) => {
+      const calc = calcularIdeal(c);
+      const pesoDisplay = convertirPeso(c.peso);
+      const idealDisplay = convertirPeso(calc.pesoIdeal);
+      const unidad = usaLibras ? "lbs" : "kg";
+
       const card = document.createElement('div');
       card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
       card.innerHTML = `
         <div class="font-semibold text-xl mb-1">${c.nombre}</div>
         <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
+        <div class="mt-6 grid grid-cols-2 gap-y-4 text-sm">
+          <div class="text-gray-600">Peso actual</div>
+          <div class="font-medium text-right">${pesoDisplay} ${unidad}</div>
+          <div class="text-gray-600">Grasa ideal</div>
+          <div class="font-medium text-blue-600 text-right">${calc.grasaIdeal}%</div>
+          <div class="text-gray-600">Peso ideal</div>
+          <div class="font-semibold text-right">${idealDisplay} ${unidad}</div>
+        </div>
+        <div class="bg-amber-100 text-amber-800 text-xs rounded-2xl px-4 py-3 mt-5">
+          Bajar <strong>${convertirPeso(calc.kgBajar)} ${unidad}</strong> → ${calc.semanas} semanas
+        </div>
       `;
-      card.onclick = () => alert("Cliente seleccionado: " + c.nombre + "\n\nDetalle completo en desarrollo");
+      card.onclick = () => verDetalle(c);
       container.appendChild(card);
     });
   }
 
-  function nuevoCliente() {
-    document.getElementById('nombre').value = '';
-    document.getElementById('sexo').value = 'M';
-    document.getElementById('edad').value = '';
-    document.getElementById('altura').value = '';
-    document.getElementById('peso').value = '';
-    document.getElementById('grasa').value = '';
-    actualizarGrasaIdeal();
-    document.getElementById('modalCliente').classList.remove('hidden');
+  function verDetalle(c) {
+    clienteActual = c;
+    document.getElementById('nombreDetalle').textContent = c.nombre;
+
+    const calc = calcularIdeal(c);
+    const unidad = usaLibras ? "lbs" : "kg";
+    const semanasTrans = c.fechaInicio ? Math.floor((new Date() - new Date(c.fechaInicio)) / (1000*60*60*24*7)) : 0;
+
+    // Resumen
+    document.getElementById('resumenCalculo').innerHTML = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(c.peso)} ${unidad}</div></div>
+        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
+        <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
+        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div></div>
+      </div>
+    `;
+
+    // Progreso
+    document.getElementById('progresoContainer').innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-3xl p-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="font-medium">Progreso hacia el objetivo</span>
+          <span class="text-2xl font-bold text-green-600">0%</span>
+        </div>
+        <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-3 bg-green-500 rounded-full w-0"></div>
+        </div>
+        <div class="text-xs text-gray-500 mt-2">
+          Funcionalidad de progreso en desarrollo
+        </div>
+      </div>
+    `;
+
+    document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
+    document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
+
+    document.getElementById('modalDetalle').classList.remove('hidden');
   }
 
-  function cerrarModal() {
-    document.getElementById('modalCliente').classList.add('hidden');
+  function cerrarModal() { 
+    document.getElementById('modalCliente').classList.add('hidden'); 
   }
 
-  function toggleUnidades() {
-    usaLibras = !usaLibras;
-    document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
-    alert("Cambio de unidades a " + (usaLibras ? "lbs" : "kg") + " (funcionalidad básica)");
+  function cerrarDetalle() { 
+    document.getElementById('modalDetalle').classList.add('hidden'); 
   }
 
   window.onload = () => {
