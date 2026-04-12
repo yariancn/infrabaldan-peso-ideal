@@ -8,7 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style> 
     body { font-family: system-ui; } 
-    .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -28,9 +27,9 @@
 
     <div class="flex gap-3 w-full sm:w-auto">
       <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
-             class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-black">
+             class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
       <button onclick="toggleUnidades()" id="btnUnidades"
-              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium whitespace-nowrap">
+              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
         Unidades: <span id="unidadActual">kg / cm</span>
       </button>
     </div>
@@ -42,7 +41,7 @@
 <!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
-    <h2 class="text-2xl font-bold mb-6" id="modalTitulo">Nuevo Cliente</h2>
+    <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
     
     <div class="space-y-5">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
@@ -72,11 +71,9 @@
 </div>
 
 <script>
-  // === PEGA AQUÍ TU URL SIN EL /exec AL FINAL ===
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
-  let clienteActual = null;
   let usaLibras = false;
 
   function actualizarGrasaIdeal() {
@@ -88,12 +85,10 @@
     const peso = parseFloat(c.peso) || 0;
     const grasaActual = parseFloat(c.grasa) || 0;
     const grasaIdeal = parseFloat(c.grasaObjetivo) || (c.sexo === 'M' ? 15 : 22);
-
     const masaMagra = peso * (1 - grasaActual / 100);
     const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
     const kgBajar = Math.max(0, peso - pesoIdeal);
     const semanas = kgBajar > 0 ? Math.ceil(kgBajar) : 0;
-
     return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), semanas, grasaIdeal };
   }
 
@@ -110,13 +105,11 @@
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
-      if (!res.ok) throw new Error("Error HTTP");
       clientes = await res.json();
       renderLista();
-      console.log("Clientes cargados:", clientes.length);
     } catch (e) {
       console.error(e);
-      alert("No se pudieron cargar los clientes.\n\nRevisa que la Web App esté desplegada y el SHEET_ID sea correcto.");
+      alert("Error al cargar clientes. Revisa tu conexión.");
     }
   }
 
@@ -137,17 +130,17 @@
         method: 'POST',
         body: JSON.stringify({ action: "guardarCliente", cliente: cliente })
       });
-
       const result = await res.json();
+      
       if (result.success) {
-        alert("✅ Cliente guardado correctamente en Google Sheets");
+        alert("✅ Cliente guardado correctamente");
         cerrarModal();
         cargarClientes();
       } else {
-        alert("Error: " + (result.message || "Desconocido"));
+        alert("Error: " + (result.message || ""));
       }
     } catch (e) {
-      alert("Error de conexión al guardar.\nRevisa tu internet y que la Web App esté activa.");
+      alert("Error de conexión al guardar");
     }
   }
 
@@ -165,7 +158,7 @@
       const unidad = usaLibras ? "lbs" : "kg";
 
       const card = document.createElement('div');
-      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl card-hover transition";
+      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
       card.innerHTML = `
         <div class="font-semibold text-xl mb-1">${c.nombre}</div>
         <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
@@ -181,22 +174,24 @@
           Bajar <strong>${convertirPeso(calc.kgBajar)} ${unidad}</strong> → ${calc.semanas} semanas
         </div>
       `;
-      card.onclick = () => verDetalle(c);
+      card.onclick = () => alert("Detalle de " + c.nombre + "\n\nPronto disponible");
       container.appendChild(card);
     });
-
-    if (filtrados.length === 0 && filtro !== '') {
-      container.innerHTML = `<p class="col-span-3 text-center text-gray-500 py-12">No se encontraron clientes</p>`;
-    }
   }
 
-  function verDetalle(c) {
-    clienteActual = c;
-    alert("Detalle de cliente:\n\nNombre: " + c.nombre + "\nPeso: " + c.peso + " kg\n\n(El detalle completo se está mejorando)");
+  function nuevoCliente() {
+    document.getElementById('nombre').value = '';
+    document.getElementById('sexo').value = 'M';
+    document.getElementById('edad').value = '';
+    document.getElementById('altura').value = '';
+    document.getElementById('peso').value = '';
+    document.getElementById('grasa').value = '';
+    actualizarGrasaIdeal();
+    document.getElementById('modalCliente').classList.remove('hidden');
   }
 
-  function cerrarModal() { 
-    document.getElementById('modalCliente').classList.add('hidden'); 
+  function cerrarModal() {
+    document.getElementById('modalCliente').classList.add('hidden');
   }
 
   window.onload = () => {
