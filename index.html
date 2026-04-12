@@ -37,7 +37,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
 </div>
 
-<!-- Modal Detalle Mejorado -->
+<!-- Modal Detalle del Cliente -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
@@ -47,7 +47,9 @@
 
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
 
-    <!-- Información de progreso -->
+    <!-- Progreso -->
+    <div id="progresoContainer" class="mb-8"></div>
+
     <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
       <div class="bg-white border rounded-2xl p-4">
         <div class="text-gray-500">Fecha de inicio</div>
@@ -160,7 +162,7 @@
   }
 
   function guardarCliente() {
-    const fechaInicio = new Date().toISOString().split('T')[0]; // Fecha de hoy
+    const fechaInicio = new Date().toISOString().split('T')[0];
 
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
@@ -192,23 +194,49 @@
     const calc = calcularIdeal(clienteActual);
     const unidad = usaLibras ? "lbs" : "kg";
 
-    // Fecha de inicio y semanas transcurridas
     const fechaInicio = clienteActual.fechaInicio || "Sin registrar";
     const semanasTrans = clienteActual.fechaInicio 
       ? Math.floor((new Date() - new Date(clienteActual.fechaInicio)) / (1000 * 60 * 60 * 24 * 7)) 
       : 0;
 
-    document.getElementById('fechaInicio').textContent = fechaInicio;
-    document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
+    // Calcular porcentaje de progreso
+    const pesoInicial = parseFloat(clienteActual.peso);
+    const pesoActual = clienteActual.avances && clienteActual.avances.length > 0 
+      ? parseFloat(clienteActual.avances[0].peso) 
+      : pesoInicial;
+    
+    const totalABajar = parseFloat(calc.kgBajar);
+    const bajado = pesoInicial - pesoActual;
+    const progresoPorcentaje = totalABajar > 0 ? Math.min(100, Math.round((bajado / totalABajar) * 100)) : 0;
 
+    // Resumen principal
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(clienteActual.peso)} ${unidad}</div></div>
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(pesoActual)} ${unidad}</div></div>
         <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${clienteActual.grasa}%</div></div>
         <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
         <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div></div>
       </div>
     `;
+
+    // Mostrar progreso
+    document.getElementById('progresoContainer').innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-3xl p-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="font-medium">Progreso hacia el objetivo</span>
+          <span class="text-2xl font-bold text-green-600">${progresoPorcentaje}%</span>
+        </div>
+        <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-3 bg-green-500 rounded-full transition-all" style="width: ${progresoPorcentaje}%"></div>
+        </div>
+        <div class="text-xs text-gray-500 mt-2">
+          Has bajado ${convertirPeso(bajado)} ${unidad} de ${convertirPeso(totalABajar)} ${unidad} necesarios
+        </div>
+      </div>
+    `;
+
+    document.getElementById('fechaInicio').textContent = fechaInicio;
+    document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
 
     document.getElementById('modalDetalle').classList.remove('hidden');
     renderHistorialYGrafica();
@@ -220,7 +248,6 @@
 
     const fechas = [], pesos = [];
 
-    // Agregar peso inicial como primer punto
     if (clienteActual.fechaInicio) {
       fechas.push(clienteActual.fechaInicio);
       pesos.push(clienteActual.peso);
@@ -258,14 +285,10 @@
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: false } }
-      }
+      options: { responsive: true, scales: { y: { beginAtZero: false } }}
     });
   }
 
-  // Funciones restantes (agregarAvance, eliminar, cerrar, etc.)
   function agregarAvance() {
     if (!clienteActual) return;
     const fecha = document.getElementById('fechaAvance').value;
@@ -280,8 +303,9 @@
 
     localStorage.setItem('clientesBaldan', JSON.stringify(clientes));
     renderHistorialYGrafica();
-    document.getElementById('pesoAvance').value = '';
-    document.getElementById('grasaAvance').value = '';
+    
+    // Actualizar el modal completo
+    verDetalle(clienteActual.index);
   }
 
   function eliminarClienteActual() {
