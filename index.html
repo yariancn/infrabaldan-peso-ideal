@@ -42,7 +42,7 @@
 <!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
-    <h2 class="text-2xl font-bold mb-6" id="modalTitulo">Nuevo Cliente</h2>
+    <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
     
     <div class="space-y-5">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
@@ -71,11 +71,48 @@
   </div>
 </div>
 
+<!-- Modal Detalle del Cliente -->
+<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
+      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black">×</button>
+    </div>
+
+    <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
+    <div id="progresoContainer" class="mb-8"></div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Fecha de inicio</div>
+        <div class="font-medium" id="fechaInicio"></div>
+      </div>
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Semanas transcurridas</div>
+        <div class="font-medium" id="semanasTranscurridas"></div>
+      </div>
+    </div>
+
+    <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
+      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
+      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
+      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
+    </div>
+
+    <canvas id="grafica" height="140"></canvas>
+
+    <button onclick="eliminarClienteActual()" class="mt-8 text-red-600 text-sm hover:underline">Eliminar este cliente</button>
+  </div>
+</div>
+
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
   let clienteActual = null;
+  let chartInstance = null;
   let usaLibras = false;
 
   function actualizarGrasaIdeal() {
@@ -104,22 +141,22 @@
     renderLista();
   }
 
-  // Cargar clientes
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
       clientes = await res.json();
       renderLista();
     } catch (e) {
-      console.error(e);
+      console.error("Error cargando clientes:", e);
     }
   }
 
-  // Guardar cliente
   async function guardarCliente() {
     const btn = document.getElementById('btnGuardar');
-    btn.disabled = true;
-    btn.textContent = "Guardando...";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+    }
 
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
@@ -135,7 +172,7 @@
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: "guardarCliente", cliente: cliente })
+        body: JSON.stringify({ action: "guardarCliente", cliente })
       });
       const result = await res.json();
 
@@ -144,13 +181,15 @@
         cerrarModal();
         await cargarClientes();
       } else {
-        alert("Error: " + (result.message || "Desconocido"));
+        alert("Error: " + (result.message || ""));
       }
     } catch (e) {
-      alert("Error de conexión al guardar");
+      alert("Error de conexión");
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Guardar Cliente";
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Guardar Cliente";
+      }
     }
   }
 
@@ -191,26 +230,44 @@
 
   function verDetalle(c) {
     clienteActual = c;
-    alert(`Cliente seleccionado:\n\nNombre: ${c.nombre}\nSexo: ${c.sexo}\nEdad: ${c.edad}\nPeso: ${c.peso} kg\n\nEl detalle completo se está desarrollando.`);
-    // Aquí iremos agregando el modal completo más adelante
+    document.getElementById('nombreDetalle').textContent = c.nombre;
+
+    const calc = calcularIdeal(c);
+    const unidad = usaLibras ? "lbs" : "kg";
+    const semanasTrans = c.fechaInicio ? Math.floor((new Date() - new Date(c.fechaInicio)) / (1000*60*60*24*7)) : 0;
+
+    // Resumen
+    document.getElementById('resumenCalculo').innerHTML = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(c.peso)} ${unidad}</div></div>
+        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
+        <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
+        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div></div>
+      </div>
+    `;
+
+    // Progreso simple por ahora
+    document.getElementById('progresoContainer').innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-3xl p-6 text-center">
+        <p class="text-lg font-medium">Progreso hacia el objetivo</p>
+        <p class="text-4xl font-bold text-green-600 mt-2">Próximamente</p>
+      </div>
+    `;
+
+    document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
+    document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
+
+    document.getElementById('modalDetalle').classList.remove('hidden');
   }
 
-  function nuevoCliente() {
-    document.getElementById('nombre').value = '';
-    document.getElementById('sexo').value = 'M';
-    document.getElementById('edad').value = '';
-    document.getElementById('altura').value = '';
-    document.getElementById('peso').value = '';
-    document.getElementById('grasa').value = '';
-    actualizarGrasaIdeal();
-    document.getElementById('modalCliente').classList.remove('hidden');
+  function cerrarModal() { 
+    document.getElementById('modalCliente').classList.add('hidden'); 
   }
 
-  function cerrarModal() {
-    document.getElementById('modalCliente').classList.add('hidden');
+  function cerrarDetalle() { 
+    document.getElementById('modalDetalle').classList.add('hidden'); 
   }
 
-  // Inicializar
   window.onload = () => {
     cargarClientes();
   };
