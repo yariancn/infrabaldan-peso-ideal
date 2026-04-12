@@ -98,7 +98,10 @@
       <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
 
-    <canvas id="grafica" height="160"></canvas>
+    <!-- Contenedor para la gráfica -->
+    <div class="mt-6">
+      <canvas id="grafica" height="160"></canvas>
+    </div>
   </div>
 </div>
 
@@ -192,7 +195,6 @@
 
     const calc = calcularIdeal(c);
 
-    // Resumen
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${c.peso} kg</div></div>
@@ -222,18 +224,19 @@
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
     document.getElementById('semanasTranscurridas').textContent = "0 semanas";
 
-    // Gráfica de peso
     document.getElementById('modalDetalle').classList.remove('hidden');
 
+    // Gráfica dentro del modal
     setTimeout(() => {
-      const canvas = document.createElement('canvas');
-      canvas.id = 'grafica';
-      canvas.height = 160;
-      const oldCanvas = document.getElementById('grafica');
-      if (oldCanvas) oldCanvas.remove();
-      document.getElementById('modalDetalle').appendChild(canvas);
+      const canvas = document.getElementById('grafica');
+      if (canvas) canvas.remove();
 
-      new Chart(canvas, {
+      const newCanvas = document.createElement('canvas');
+      newCanvas.id = 'grafica';
+      newCanvas.height = 160;
+      document.getElementById('modalDetalle').appendChild(newCanvas);
+
+      new Chart(newCanvas, {
         type: 'line',
         data: {
           labels: ['Inicio', 'Actual'],
@@ -242,8 +245,7 @@
               label: 'Peso Real',
               data: [c.peso, c.peso],
               borderColor: '#0ea5e9',
-              tension: 0.3,
-              pointBackgroundColor: '#0ea5e9'
+              tension: 0.3
             },
             {
               label: 'Peso Ideal',
@@ -255,9 +257,7 @@
         },
         options: {
           responsive: true,
-          scales: {
-            y: { beginAtZero: false }
-          }
+          scales: { y: { beginAtZero: false } }
         }
       });
     }, 100);
