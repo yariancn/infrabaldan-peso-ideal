@@ -66,12 +66,13 @@
 
     <div class="flex gap-3 mt-8">
       <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
-      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
+      <button onclick="guardarCliente()" id="btnGuardar" 
+              class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Detalle Completo -->
+<!-- Modal Detalle -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
@@ -102,8 +103,6 @@
     </div>
 
     <canvas id="grafica" height="140"></canvas>
-
-    <button onclick="eliminarClienteActual()" class="mt-8 text-red-600 text-sm hover:underline">Eliminar este cliente</button>
   </div>
 </div>
 
@@ -112,7 +111,6 @@
 
   let clientes = [];
   let clienteActual = null;
-  let chartInstance = null;
   let usaLibras = false;
 
   function actualizarGrasaIdeal() {
@@ -153,7 +151,8 @@
 
   async function guardarCliente() {
     const btn = document.getElementById('btnGuardar');
-    if (btn) btn.disabled = true;
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
 
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
@@ -181,9 +180,10 @@
         alert("Error: " + (result.message || ""));
       }
     } catch (e) {
-      alert("Error de conexión");
+      alert("Error de conexión al guardar");
     } finally {
-      if (btn) btn.disabled = false;
+      btn.disabled = false;
+      btn.textContent = "Guardar Cliente";
     }
   }
 
@@ -230,7 +230,6 @@
     const unidad = usaLibras ? "lbs" : "kg";
     const semanasTrans = c.fechaInicio ? Math.floor((new Date() - new Date(c.fechaInicio)) / (1000*60*60*24*7)) : 0;
 
-    // Resumen
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(c.peso)} ${unidad}</div></div>
@@ -240,17 +239,10 @@
       </div>
     `;
 
-    // Progreso (por ahora simple)
     document.getElementById('progresoContainer').innerHTML = `
-      <div class="bg-white border border-gray-200 rounded-3xl p-6">
-        <div class="flex justify-between mb-3">
-          <span class="font-medium">Progreso hacia el objetivo</span>
-          <span class="text-2xl font-bold text-green-600">0%</span>
-        </div>
-        <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-          <div class="h-3 bg-green-500 rounded-full w-0"></div>
-        </div>
-        <p class="text-xs text-gray-500 mt-3">Funcionalidad de progreso en desarrollo</p>
+      <div class="bg-white border border-gray-200 rounded-3xl p-6 text-center">
+        <p class="text-lg font-medium">Progreso hacia el objetivo</p>
+        <p class="text-4xl font-bold text-green-600 mt-2">Próximamente</p>
       </div>
     `;
 
