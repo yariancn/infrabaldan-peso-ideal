@@ -185,10 +185,7 @@
   function verDetalle(c) {
     document.getElementById('nombreDetalle').textContent = c.nombre;
 
-    const calc = {
-      pesoIdeal: (parseFloat(c.peso) * (1 - parseFloat(c.grasa)/100) / (1 - parseFloat(c.grasaObjetivo || 22)/100)).toFixed(1),
-      grasaIdeal: c.grasaObjetivo || (c.sexo === 'M' ? 15 : 22)
-    };
+    const calc = calcularIdeal(c);
 
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
