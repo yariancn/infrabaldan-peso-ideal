@@ -76,6 +76,9 @@
 
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
 
+    <!-- Barra de progreso -->
+    <div id="progresoContainer" class="mb-8"></div>
+
     <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
       <div class="bg-white border rounded-2xl p-4">
         <div class="text-gray-500">Fecha de inicio</div>
@@ -187,12 +190,30 @@
 
     const calc = calcularIdeal(c);
 
+    // Resumen completo
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${c.peso} kg</div></div>
         <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
         <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
         <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${calc.pesoIdeal} kg</div></div>
+      </div>
+    `;
+
+    // Barra de progreso
+    const progresoPorcentaje = 0; // Por ahora 0% (se calculará cuando tengamos avances)
+    document.getElementById('progresoContainer').innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-3xl p-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="font-medium">Progreso hacia el objetivo</span>
+          <span class="text-2xl font-bold text-green-600">${progresoPorcentaje}%</span>
+        </div>
+        <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-3 bg-green-500 rounded-full" style="width: ${progresoPorcentaje}%"></div>
+        </div>
+        <div class="text-xs text-gray-500 mt-2">
+          Has bajado 0 kg de ${calc.kgBajar} kg necesarios
+        </div>
       </div>
     `;
 
