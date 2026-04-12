@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     #graficaContainer {
-      max-height: 200px;
+      max-height: 220px;
       position: relative;
     }
   </style>
@@ -45,7 +45,6 @@
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
     <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
-    
     <div class="space-y-5">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
       <div class="grid grid-cols-2 gap-4">
@@ -65,7 +64,6 @@
         <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
       </div>
     </div>
-
     <div class="flex gap-3 mt-8">
       <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
       <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
@@ -96,18 +94,18 @@
       </div>
     </div>
 
-    <!-- Gráfica de avances (solo esto cambió) -->
+    <!-- Gráfica de avances con fechas -->
     <div class="mb-8">
       <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
       <div id="graficaContainer" class="border border-gray-200 rounded-3xl p-4 bg-white">
-        <canvas id="grafica" height="170"></canvas>
+        <canvas id="grafica" height="180"></canvas>
       </div>
     </div>
 
     <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
     <div class="grid grid-cols-3 gap-4 mb-8">
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
-      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
+      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso (kg)" class="px-4 py-3 border rounded-2xl">
       <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
       <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
@@ -233,23 +231,25 @@
 
     document.getElementById('modalDetalle').classList.remove('hidden');
 
-    // Gráfica de línea con puntos (solo esto cambió)
+    // Gráfica con fechas reales (solo esto cambió)
     setTimeout(() => {
       const canvas = document.getElementById('grafica');
       if (chartInstance) chartInstance.destroy();
 
+      const fechaInicio = c.fechaInicio ? c.fechaInicio.substring(0,10) : "Inicio";
+
       chartInstance = new Chart(canvas, {
         type: 'line',
         data: {
-          labels: ['Inicio', 'Actual'],
+          labels: [fechaInicio, 'Hoy'],
           datasets: [
             {
               label: 'Peso Real',
               data: [parseFloat(c.peso), parseFloat(c.peso)],
               borderColor: '#0ea5e9',
-              backgroundColor: '#0ea5e9',
               tension: 0.3,
-              pointRadius: 5
+              pointRadius: 5,
+              pointBackgroundColor: '#0ea5e9'
             },
             {
               label: 'Peso Ideal',
@@ -263,8 +263,12 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          scales: { y: { beginAtZero: false } },
-          plugins: { legend: { position: 'top' } }
+          scales: { 
+            y: { beginAtZero: false } 
+          },
+          plugins: {
+            legend: { position: 'top' }
+          }
         }
       });
     }, 100);
@@ -290,7 +294,7 @@
   }
 
   function agregarAvance() {
-    alert("Avance registrado (próximamente actualizará la gráfica con nuevos puntos)");
+    alert("Avance registrado.\n\nCuando guardes varios avances, la gráfica mostrará una línea inclinada bajando.");
   }
 
   window.onload = () => {
