@@ -98,9 +98,10 @@
       <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
 
-    <!-- Contenedor para la gráfica -->
-    <div class="mt-6">
-      <canvas id="grafica" height="160"></canvas>
+    <!-- Gráfica pequeña y contenida -->
+    <div class="mt-6 border border-gray-200 rounded-2xl p-4 bg-white">
+      <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
+      <canvas id="grafica" height="140"></canvas>
     </div>
   </div>
 </div>
@@ -204,16 +205,14 @@
       </div>
     `;
 
-    // Barra de progreso
-    const progresoPorcentaje = 0;
     document.getElementById('progresoContainer').innerHTML = `
       <div class="bg-white border border-gray-200 rounded-3xl p-6">
         <div class="flex justify-between items-center mb-3">
           <span class="font-medium">Progreso hacia el objetivo</span>
-          <span class="text-2xl font-bold text-green-600">${progresoPorcentaje}%</span>
+          <span class="text-2xl font-bold text-green-600">0%</span>
         </div>
         <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-          <div class="h-3 bg-green-500 rounded-full" style="width: ${progresoPorcentaje}%"></div>
+          <div class="h-3 bg-green-500 rounded-full" style="width: 0%"></div>
         </div>
         <div class="text-xs text-gray-500 mt-2">
           Has bajado 0 kg de ${calc.kgBajar} kg necesarios
@@ -226,14 +225,14 @@
 
     document.getElementById('modalDetalle').classList.remove('hidden');
 
-    // Gráfica dentro del modal
+    // Gráfica pequeña y contenida
     setTimeout(() => {
       const canvas = document.getElementById('grafica');
       if (canvas) canvas.remove();
 
       const newCanvas = document.createElement('canvas');
       newCanvas.id = 'grafica';
-      newCanvas.height = 160;
+      newCanvas.height = 140;
       document.getElementById('modalDetalle').appendChild(newCanvas);
 
       new Chart(newCanvas, {
@@ -257,10 +256,13 @@
         },
         options: {
           responsive: true,
-          scales: { y: { beginAtZero: false } }
+          scales: { y: { beginAtZero: false } },
+          plugins: {
+            legend: { position: 'top' }
+          }
         }
       });
-    }, 100);
+    }, 200);
   }
 
   function nuevoCliente() {
