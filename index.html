@@ -71,51 +71,12 @@
   </div>
 </div>
 
-<!-- Modal Detalle -->
-<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
-      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black">×</button>
-    </div>
-
-    <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
-    <div id="progresoContainer" class="mb-8"></div>
-
-    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
-      <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Fecha de inicio</div>
-        <div class="font-medium" id="fechaInicio"></div>
-      </div>
-      <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Semanas transcurridas</div>
-        <div class="font-medium" id="semanasTranscurridas"></div>
-      </div>
-    </div>
-
-    <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
-    <div class="grid grid-cols-3 gap-4 mb-8">
-      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
-      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
-      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
-      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
-    </div>
-
-    <canvas id="grafica" height="140"></canvas>
-
-    <h3 class="font-semibold mt-10 mb-4">Historial de Avances</h3>
-    <table class="w-full text-sm" id="tablaHistorial"></table>
-
-    <button onclick="eliminarClienteActual()" class="mt-10 text-red-600 text-sm hover:underline">Eliminar este cliente</button>
-  </div>
-</div>
-
 <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuz2wnYl2QT2AhvYbTI1eM3jnzYOiVkigRvvD2WRzd1cOS0mQMHCf9_43Ppc2z3pzo/exec";
+  // === PEGA AQUÍ TU URL SIN EL /exec AL FINAL ===
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
   let clienteActual = null;
-  let chartInstance = null;
   let usaLibras = false;
 
   function actualizarGrasaIdeal() {
@@ -146,20 +107,19 @@
     renderLista();
   }
 
-  // ==================== CARGAR CLIENTES ====================
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
-      if (!res.ok) throw new Error("Error de conexión");
+      if (!res.ok) throw new Error("Error HTTP");
       clientes = await res.json();
       renderLista();
+      console.log("Clientes cargados:", clientes.length);
     } catch (e) {
       console.error(e);
-      alert("No se pudieron cargar los clientes.\nRevisa que el Apps Script esté desplegado correctamente.");
+      alert("No se pudieron cargar los clientes.\n\nRevisa que la Web App esté desplegada y el SHEET_ID sea correcto.");
     }
   }
 
-  // ==================== GUARDAR CLIENTE ====================
   async function guardarCliente() {
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
@@ -180,14 +140,14 @@
 
       const result = await res.json();
       if (result.success) {
-        alert("Cliente guardado correctamente");
+        alert("✅ Cliente guardado correctamente en Google Sheets");
         cerrarModal();
         cargarClientes();
       } else {
         alert("Error: " + (result.message || "Desconocido"));
       }
     } catch (e) {
-      alert("Error de conexión al guardar. Revisa tu internet.");
+      alert("Error de conexión al guardar.\nRevisa tu internet y que la Web App esté activa.");
     }
   }
 
@@ -232,43 +192,13 @@
 
   function verDetalle(c) {
     clienteActual = c;
-    document.getElementById('nombreDetalle').textContent = c.nombre;
-
-    const calc = calcularIdeal(c);
-    const unidad = usaLibras ? "lbs" : "kg";
-    const semanasTrans = c.fechaInicio ? Math.floor((new Date() - new Date(c.fechaInicio)) / (1000*60*60*24*7)) : 0;
-
-    document.getElementById('resumenCalculo').innerHTML = `
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(c.peso)} ${unidad}</div></div>
-        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
-        <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
-        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div></div>
-      </div>
-    `;
-
-    document.getElementById('progresoContainer').innerHTML = `
-      <div class="bg-white border border-gray-200 rounded-3xl p-6 text-center">
-        <p class="text-gray-500 text-sm">Progreso (en desarrollo)</p>
-        <p class="text-2xl font-bold text-green-600 mt-2">Próximamente</p>
-      </div>
-    `;
-
-    document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
-    document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
-
-    document.getElementById('modalDetalle').classList.remove('hidden');
+    alert("Detalle de cliente:\n\nNombre: " + c.nombre + "\nPeso: " + c.peso + " kg\n\n(El detalle completo se está mejorando)");
   }
 
   function cerrarModal() { 
     document.getElementById('modalCliente').classList.add('hidden'); 
   }
 
-  function cerrarDetalle() { 
-    document.getElementById('modalDetalle').classList.add('hidden'); 
-  }
-
-  // Inicializar
   window.onload = () => {
     cargarClientes();
   };
