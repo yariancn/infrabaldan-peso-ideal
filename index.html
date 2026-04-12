@@ -5,13 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Infra Baldan - Oxy Hyperbaric</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    #graficaContainer {
-      max-height: 180px;
-      position: relative;
-    }
-  </style>
 </head>
 <body class="bg-gray-50">
 
@@ -96,20 +89,30 @@
       </div>
     </div>
 
+    <!-- Indicador simple de evolución -->
+    <div class="mb-8">
+      <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
+      <div class="bg-white border border-gray-200 rounded-3xl p-5">
+        <div class="flex justify-between text-sm mb-2">
+          <span>Peso Actual</span>
+          <span class="font-semibold" id="pesoActualSimple"></span>
+        </div>
+        <div class="h-2 bg-gray-200 rounded-full mb-1">
+          <div id="barraProgresoSimple" class="h-2 bg-blue-500 rounded-full" style="width: 100%"></div>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span>Peso Ideal</span>
+          <span class="font-semibold text-emerald-600" id="pesoIdealSimple"></span>
+        </div>
+      </div>
+    </div>
+
     <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
     <div class="grid grid-cols-3 gap-4 mb-8">
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
       <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
       <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
       <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
-    </div>
-
-    <!-- Gráfica pequeña y contenida -->
-    <div class="mt-6">
-      <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
-      <div id="graficaContainer" class="border border-gray-200 rounded-2xl p-4 bg-white">
-        <canvas id="grafica" height="130"></canvas>
-      </div>
     </div>
   </div>
 </div>
@@ -131,8 +134,7 @@
     const masaMagra = peso * (1 - grasaActual / 100);
     const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
     const kgBajar = Math.max(0, peso - pesoIdeal);
-    const semanas = kgBajar > 0 ? Math.ceil(kgBajar) : 0;
-    return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), semanas, grasaIdeal };
+    return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), grasaIdeal };
   }
 
   async function cargarClientes() {
@@ -228,48 +230,14 @@
       </div>
     `;
 
+    // Indicador simple
+    document.getElementById('pesoActualSimple').textContent = c.peso + " kg";
+    document.getElementById('pesoIdealSimple').textContent = calc.pesoIdeal + " kg";
+
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
     document.getElementById('semanasTranscurridas').textContent = "0 semanas";
 
     document.getElementById('modalDetalle').classList.remove('hidden');
-
-    // Gráfica pequeña
-    setTimeout(() => {
-      let canvas = document.getElementById('grafica');
-      if (canvas) canvas.remove();
-
-      canvas = document.createElement('canvas');
-      canvas.id = 'grafica';
-      canvas.height = 130;
-      document.getElementById('graficaContainer').appendChild(canvas);
-
-      new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: ['Inicio', 'Actual'],
-          datasets: [
-            {
-              label: 'Peso Real',
-              data: [parseFloat(c.peso), parseFloat(c.peso)],
-              borderColor: '#0ea5e9',
-              tension: 0.3
-            },
-            {
-              label: 'Peso Ideal',
-              data: [parseFloat(calc.pesoIdeal), parseFloat(calc.pesoIdeal)],
-              borderColor: '#10b981',
-              borderDash: [5, 5]
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { beginAtZero: false } },
-          plugins: { legend: { position: 'top', labels: { boxWidth: 12, padding: 15 } } }
-        }
-      });
-    }, 150);
   }
 
   function nuevoCliente() {
