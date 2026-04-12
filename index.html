@@ -6,14 +6,33 @@
   <title>Infra Baldan - Oxy Hyperbaric</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 p-6">
+<body class="bg-gray-50">
 
-<h1 class="text-4xl font-bold text-center mb-8">Infra Baldan</h1>
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex flex-col items-center mb-8">
+    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4">
+    <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
+    <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
+  </div>
 
-<button onclick="nuevoCliente()" 
-        class="bg-black text-white px-6 py-3 rounded-2xl mx-auto block">
-  + Nuevo Cliente
-</button>
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <button onclick="nuevoCliente()" 
+            class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
+      <span>+</span> Nuevo Cliente
+    </button>
+
+    <div class="flex gap-3 w-full sm:w-auto">
+      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
+             class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
+      <button onclick="toggleUnidades()" id="btnUnidades"
+              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
+        Unidades: <span id="unidadActual">kg / cm</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
+</div>
 
 <!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -23,7 +42,7 @@
     <div class="space-y-5">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
       <div class="grid grid-cols-2 gap-4">
-        <select id="sexo" class="px-4 py-3 border rounded-2xl">
+        <select id="sexo" onchange="actualizarGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
           <option value="M">Hombre</option>
           <option value="F">Mujer</option>
         </select>
@@ -34,17 +53,148 @@
         <input id="peso" type="number" step="0.1" placeholder="Peso actual" class="px-4 py-3 border rounded-2xl">
         <input id="grasa" type="number" step="0.1" placeholder="% Grasa actual" class="px-4 py-3 border rounded-2xl">
       </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Porcentaje de grasa ideal</label>
+        <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
+      </div>
     </div>
 
     <div class="flex gap-3 mt-8">
       <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
-      <button onclick="guardarCliente()" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
+      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalle -->
+<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
+      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black">×</button>
+    </div>
+
+    <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Fecha de inicio</div>
+        <div class="font-medium" id="fechaInicio"></div>
+      </div>
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Semanas transcurridas</div>
+        <div class="font-medium" id="semanasTranscurridas"></div>
+      </div>
+    </div>
+
+    <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
+      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
+      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
+      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
   </div>
 </div>
 
 <script>
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
+
+  let clientes = [];
+
+  function actualizarGrasaIdeal() {
+    const sexo = document.getElementById('sexo').value;
+    document.getElementById('grasaObjetivo').value = sexo === 'M' ? 15 : 22;
+  }
+
+  async function cargarClientes() {
+    try {
+      const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
+      clientes = await res.json();
+      renderLista();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function guardarCliente() {
+    const btn = document.getElementById('btnGuardar');
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+
+    const cliente = {
+      nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
+      sexo: document.getElementById('sexo').value,
+      edad: parseFloat(document.getElementById('edad').value) || 30,
+      altura: parseFloat(document.getElementById('altura').value) || 170,
+      peso: parseFloat(document.getElementById('peso').value) || 0,
+      grasa: parseFloat(document.getElementById('grasa').value) || 0,
+      grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value) || (document.getElementById('sexo').value === 'M' ? 15 : 22),
+      fechaInicio: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "guardarCliente", cliente })
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        alert("✅ Cliente guardado correctamente");
+        cerrarModal();
+        await cargarClientes();
+      } else {
+        alert("Error: " + (result.message || ""));
+      }
+    } catch (e) {
+      alert("Error de conexión al guardar");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Guardar Cliente";
+    }
+  }
+
+  function renderLista() {
+    const container = document.getElementById('listaClientes');
+    container.innerHTML = '';
+
+    clientes.forEach((c) => {
+      const card = document.createElement('div');
+      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
+      card.innerHTML = `
+        <div class="font-semibold text-xl mb-1">${c.nombre}</div>
+        <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
+      `;
+      card.onclick = () => verDetalle(c);
+      container.appendChild(card);
+    });
+  }
+
+  function verDetalle(c) {
+    document.getElementById('nombreDetalle').textContent = c.nombre;
+
+    document.getElementById('resumenCalculo').innerHTML = `
+      <div class="grid grid-cols-2 gap-6 text-center">
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${c.peso} kg</div></div>
+        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
+      </div>
+    `;
+
+    document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
+    document.getElementById('semanasTranscurridas').textContent = "0 semanas";
+
+    document.getElementById('modalDetalle').classList.remove('hidden');
+  }
+
   function nuevoCliente() {
+    document.getElementById('nombre').value = '';
+    document.getElementById('sexo').value = 'M';
+    document.getElementById('edad').value = '';
+    document.getElementById('altura').value = '';
+    document.getElementById('peso').value = '';
+    document.getElementById('grasa').value = '';
+    actualizarGrasaIdeal();
     document.getElementById('modalCliente').classList.remove('hidden');
   }
 
@@ -52,10 +202,13 @@
     document.getElementById('modalCliente').classList.add('hidden');
   }
 
-  function guardarCliente() {
-    alert("Cliente guardado (prueba)");
-    cerrarModal();
+  function cerrarDetalle() {
+    document.getElementById('modalDetalle').classList.add('hidden');
   }
+
+  window.onload = () => {
+    cargarClientes();
+  };
 </script>
 </body>
 </html>
