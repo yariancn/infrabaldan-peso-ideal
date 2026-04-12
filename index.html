@@ -71,7 +71,7 @@
   </div>
 </div>
 
-<!-- Modal Detalle del Cliente -->
+<!-- Modal Detalle Completo -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
@@ -147,16 +147,13 @@
       clientes = await res.json();
       renderLista();
     } catch (e) {
-      console.error("Error cargando clientes:", e);
+      console.error(e);
     }
   }
 
   async function guardarCliente() {
     const btn = document.getElementById('btnGuardar');
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Guardando...";
-    }
+    if (btn) btn.disabled = true;
 
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
@@ -186,10 +183,7 @@
     } catch (e) {
       alert("Error de conexión");
     } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = "Guardar Cliente";
-      }
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -246,11 +240,17 @@
       </div>
     `;
 
-    // Progreso simple por ahora
+    // Progreso (por ahora simple)
     document.getElementById('progresoContainer').innerHTML = `
-      <div class="bg-white border border-gray-200 rounded-3xl p-6 text-center">
-        <p class="text-lg font-medium">Progreso hacia el objetivo</p>
-        <p class="text-4xl font-bold text-green-600 mt-2">Próximamente</p>
+      <div class="bg-white border border-gray-200 rounded-3xl p-6">
+        <div class="flex justify-between mb-3">
+          <span class="font-medium">Progreso hacia el objetivo</span>
+          <span class="text-2xl font-bold text-green-600">0%</span>
+        </div>
+        <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-3 bg-green-500 rounded-full w-0"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">Funcionalidad de progreso en desarrollo</p>
       </div>
     `;
 
