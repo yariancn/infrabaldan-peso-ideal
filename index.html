@@ -3,38 +3,165 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Infra Baldan - Test</title>
+  <title>Infra Baldan - Oxy Hyperbaric</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 p-6">
+<body class="bg-gray-50">
 
-  <h1 class="text-4xl font-bold text-center mb-8">Infra Baldan - Prueba</h1>
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex flex-col items-center mb-8">
+    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4">
+    <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
+    <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
+  </div>
 
-  <button onclick="nuevoCliente()" 
-          class="bg-black text-white px-6 py-3 rounded-2xl text-lg mx-auto block">
-    + Nuevo Cliente
-  </button>
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <button onclick="nuevoCliente()" 
+            class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
+      <span>+</span> Nuevo Cliente
+    </button>
 
-  <!-- Modal simple de prueba -->
-  <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-    <div class="bg-white rounded-3xl w-full max-w-md mx-4 p-8">
-      <h2 class="text-2xl font-bold mb-6">Nuevo Cliente - Prueba</h2>
-      <p class="mb-6">Si ves este mensaje, el modal funciona.</p>
-      <button onclick="cerrarModal()" 
-              class="bg-black text-white px-6 py-3 rounded-2xl w-full">
-        Cerrar
+    <div class="flex gap-3 w-full sm:w-auto">
+      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
+             class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
+      <button onclick="toggleUnidades()" id="btnUnidades"
+              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
+        Unidades: <span id="unidadActual">kg / cm</span>
       </button>
     </div>
   </div>
 
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
+</div>
+
+<!-- Modal Nuevo Cliente -->
+<div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
+    <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
+    
+    <div class="space-y-5">
+      <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
+      <div class="grid grid-cols-2 gap-4">
+        <select id="sexo" onchange="actualizarGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
+          <option value="M">Hombre</option>
+          <option value="F">Mujer</option>
+        </select>
+        <input id="edad" type="number" placeholder="Edad" class="px-4 py-3 border rounded-2xl">
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <input id="altura" type="number" step="0.1" placeholder="Altura (cm)" class="px-4 py-3 border rounded-2xl">
+        <input id="peso" type="number" step="0.1" placeholder="Peso actual" class="px-4 py-3 border rounded-2xl">
+        <input id="grasa" type="number" step="0.1" placeholder="% Grasa actual" class="px-4 py-3 border rounded-2xl">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Porcentaje de grasa ideal</label>
+        <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-8">
+      <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
+      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
+
+  let clientes = [];
+
+  function actualizarGrasaIdeal() {
+    const sexo = document.getElementById('sexo').value;
+    document.getElementById('grasaObjetivo').value = sexo === 'M' ? 15 : 22;
+  }
+
+  async function cargarClientes() {
+    try {
+      const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
+      clientes = await res.json();
+      renderLista();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function guardarCliente() {
+    const btn = document.getElementById('btnGuardar');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+    }
+
+    const cliente = {
+      nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
+      sexo: document.getElementById('sexo').value,
+      edad: parseFloat(document.getElementById('edad').value) || 30,
+      altura: parseFloat(document.getElementById('altura').value) || 170,
+      peso: parseFloat(document.getElementById('peso').value) || 0,
+      grasa: parseFloat(document.getElementById('grasa').value) || 0,
+      grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value) || (document.getElementById('sexo').value === 'M' ? 15 : 22),
+      fechaInicio: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "guardarCliente", cliente })
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        alert("✅ Cliente guardado correctamente");
+        cerrarModal();
+        await cargarClientes();
+      } else {
+        alert("Error: " + (result.message || ""));
+      }
+    } catch (e) {
+      alert("Error de conexión al guardar");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Guardar Cliente";
+      }
+    }
+  }
+
+  function renderLista() {
+    const container = document.getElementById('listaClientes');
+    container.innerHTML = '';
+
+    clientes.forEach((c) => {
+      const card = document.createElement('div');
+      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
+      card.innerHTML = `
+        <div class="font-semibold text-xl mb-1">${c.nombre}</div>
+        <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
+      `;
+      card.onclick = () => alert("Cliente: " + c.nombre);
+      container.appendChild(card);
+    });
+  }
+
   function nuevoCliente() {
+    document.getElementById('nombre').value = '';
+    document.getElementById('sexo').value = 'M';
+    document.getElementById('edad').value = '';
+    document.getElementById('altura').value = '';
+    document.getElementById('peso').value = '';
+    document.getElementById('grasa').value = '';
+    actualizarGrasaIdeal();
     document.getElementById('modalCliente').classList.remove('hidden');
   }
 
   function cerrarModal() {
     document.getElementById('modalCliente').classList.add('hidden');
   }
+
+  window.onload = () => {
+    cargarClientes();
+  };
 </script>
 </body>
 </html>
