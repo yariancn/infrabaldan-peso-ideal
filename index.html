@@ -14,7 +14,6 @@
 <body class="bg-gray-50">
 
 <div class="max-w-6xl mx-auto p-6">
-  <!-- Logo + Título -->
   <div class="flex flex-col items-center mb-8">
     <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4">
     <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
@@ -22,18 +21,14 @@
   </div>
 
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-    <button onclick="nuevoCliente()" 
-            class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
+    <button onclick="nuevoCliente()" class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
       <span>+</span> Nuevo Cliente
     </button>
 
     <div class="flex gap-3 w-full sm:w-auto">
-      <input id="buscar" type="text" placeholder="Buscar cliente por nombre..." 
-             onkeyup="renderLista()" 
+      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
              class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-black">
-      
-      <button onclick="toggleUnidades()" id="btnUnidades"
-              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium whitespace-nowrap">
+      <button onclick="toggleUnidades()" id="btnUnidades" class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
         Unidades: <span id="unidadActual">kg / cm</span>
       </button>
     </div>
@@ -42,44 +37,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
 </div>
 
-<!-- Modal Nuevo / Editar Cliente -->
-<div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
-    <h2 class="text-2xl font-bold mb-6" id="modalTitulo">Nuevo Cliente</h2>
-    
-    <div class="space-y-5">
-      <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
-
-      <div class="grid grid-cols-2 gap-4">
-        <select id="sexo" onchange="actualizarGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
-          <option value="M">Hombre</option>
-          <option value="F">Mujer</option>
-        </select>
-        <input id="edad" type="number" placeholder="Edad" class="px-4 py-3 border rounded-2xl">
-      </div>
-
-      <div class="grid grid-cols-3 gap-4">
-        <input id="altura" type="number" step="0.1" placeholder="Altura" class="px-4 py-3 border rounded-2xl">
-        <input id="peso" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
-        <input id="grasa" type="number" step="0.1" placeholder="% Grasa actual" class="px-4 py-3 border rounded-2xl">
-      </div>
-
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">Porcentaje de grasa ideal</label>
-        <input id="grasaObjetivo" type="number" step="0.1" value="15" 
-               class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
-        <p class="text-xs text-gray-500 mt-1">Se ajusta automáticamente según sexo</p>
-      </div>
-    </div>
-
-    <div class="flex gap-3 mt-8">
-      <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
-      <button onclick="guardarCliente()" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Detalle del Cliente -->
+<!-- Modal Detalle Mejorado -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
@@ -89,6 +47,18 @@
 
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
 
+    <!-- Información de progreso -->
+    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Fecha de inicio</div>
+        <div class="font-medium" id="fechaInicio"></div>
+      </div>
+      <div class="bg-white border rounded-2xl p-4">
+        <div class="text-gray-500">Semanas transcurridas</div>
+        <div class="font-medium" id="semanasTranscurridas"></div>
+      </div>
+    </div>
+
     <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
     <div class="grid grid-cols-3 gap-4 mb-8">
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
@@ -97,7 +67,7 @@
       <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
 
-    <canvas id="grafica" height="130"></canvas>
+    <canvas id="grafica" height="140"></canvas>
 
     <h3 class="font-semibold mt-10 mb-4">Historial de Avances</h3>
     <table class="w-full text-sm" id="tablaHistorial"></table>
@@ -131,10 +101,7 @@
   }
 
   function convertirPeso(pesoKg) {
-    if (usaLibras) {
-      return (pesoKg * 2.20462).toFixed(1);
-    }
-    return parseFloat(pesoKg).toFixed(1);
+    return usaLibras ? (pesoKg * 2.20462).toFixed(1) : parseFloat(pesoKg).toFixed(1);
   }
 
   function toggleUnidades() {
@@ -148,20 +115,16 @@
     const container = document.getElementById('listaClientes');
     container.innerHTML = '';
 
-    const filtrados = clientes.filter(c => 
-      c.nombre.toLowerCase().includes(filtro)
-    );
+    const filtrados = clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
 
     if (filtrados.length === 0 && filtro !== '') {
-      container.innerHTML = `<p class="col-span-3 text-center text-gray-500 py-12">No se encontraron clientes con ese nombre</p>`;
+      container.innerHTML = `<p class="col-span-3 text-center text-gray-500 py-12">No se encontraron clientes</p>`;
       return;
     }
 
     filtrados.forEach((c) => {
       const calc = calcularIdeal(c);
       const pesoDisplay = convertirPeso(c.peso);
-      const idealDisplay = convertirPeso(calc.pesoIdeal);
-      const bajarDisplay = convertirPeso(calc.kgBajar);
       const unidad = usaLibras ? "lbs" : "kg";
 
       const card = document.createElement('div');
@@ -169,26 +132,12 @@
       card.innerHTML = `
         <div class="font-semibold text-xl mb-1">${c.nombre}</div>
         <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
-        
         <div class="mt-6 space-y-3 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-600">Peso actual</span>
-            <span class="font-medium">${pesoDisplay} ${unidad}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Grasa actual</span>
-            <span class="font-medium">${c.grasa}%</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Grasa ideal</span>
-            <span class="font-medium text-blue-600">${calc.grasaIdeal}%</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Peso ideal</span>
-            <span class="font-semibold">${idealDisplay} ${unidad}</span>
-          </div>
+          <div class="flex justify-between"><span class="text-gray-600">Peso actual</span><span class="font-medium">${pesoDisplay} ${unidad}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">Grasa ideal</span><span class="font-medium text-blue-600">${calc.grasaIdeal}%</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">Peso ideal</span><span class="font-semibold">${convertirPeso(calc.pesoIdeal)} ${unidad}</span></div>
           <div class="bg-amber-100 text-amber-800 text-xs rounded-2xl px-4 py-3 mt-2">
-            Bajar <strong>${bajarDisplay} ${unidad}</strong> → <strong>${calc.semanas} semanas</strong>
+            Bajar <strong>${convertirPeso(calc.kgBajar)} ${unidad}</strong> → ${calc.semanas} semanas
           </div>
         </div>
       `;
@@ -211,6 +160,8 @@
   }
 
   function guardarCliente() {
+    const fechaInicio = new Date().toISOString().split('T')[0]; // Fecha de hoy
+
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
       sexo: document.getElementById('sexo').value,
@@ -219,6 +170,7 @@
       peso: parseFloat(document.getElementById('peso').value) || 80,
       grasa: parseFloat(document.getElementById('grasa').value) || 25,
       grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value) || (document.getElementById('sexo').value === 'M' ? 15 : 22),
+      fechaInicio: fechaInicio,
       avances: clienteActual ? clienteActual.avances : []
     };
 
@@ -240,28 +192,21 @@
     const calc = calcularIdeal(clienteActual);
     const unidad = usaLibras ? "lbs" : "kg";
 
+    // Fecha de inicio y semanas transcurridas
+    const fechaInicio = clienteActual.fechaInicio || "Sin registrar";
+    const semanasTrans = clienteActual.fechaInicio 
+      ? Math.floor((new Date() - new Date(clienteActual.fechaInicio)) / (1000 * 60 * 60 * 24 * 7)) 
+      : 0;
+
+    document.getElementById('fechaInicio').textContent = fechaInicio;
+    document.getElementById('semanasTranscurridas').textContent = `${semanasTrans} semanas`;
+
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div>
-          <div class="text-xs text-gray-500">PESO ACTUAL</div>
-          <div class="text-3xl font-bold">${convertirPeso(clienteActual.peso)} ${unidad}</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-500">GRASA ACTUAL</div>
-          <div class="text-3xl font-bold">${clienteActual.grasa}%</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-500">GRASA IDEAL</div>
-          <div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-500">PESO IDEAL</div>
-          <div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div>
-        </div>
-      </div>
-      <div class="mt-6 text-center text-sm bg-white rounded-2xl p-4 border">
-        Debe bajar <strong>${convertirPeso(calc.kgBajar)} ${unidad}</strong> para alcanzar su objetivo<br>
-        Tiempo estimado: <strong>${calc.semanas} semanas</strong> (1 kg por semana)
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${convertirPeso(clienteActual.peso)} ${unidad}</div></div>
+        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${clienteActual.grasa}%</div></div>
+        <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
+        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${convertirPeso(calc.pesoIdeal)} ${unidad}</div></div>
       </div>
     `;
 
@@ -275,6 +220,12 @@
 
     const fechas = [], pesos = [];
 
+    // Agregar peso inicial como primer punto
+    if (clienteActual.fechaInicio) {
+      fechas.push(clienteActual.fechaInicio);
+      pesos.push(clienteActual.peso);
+    }
+
     (clienteActual.avances || []).forEach(a => {
       const row = document.createElement('tr');
       row.className = "border-b hover:bg-gray-50";
@@ -285,22 +236,36 @@
     });
 
     if (chartInstance) chartInstance.destroy();
+
     chartInstance = new Chart(document.getElementById('grafica'), {
       type: 'line',
-      data: { 
-        labels: fechas, 
-        datasets: [{ 
-          label: 'Peso', 
-          data: pesos, 
-          borderColor: '#0ea5e9', 
-          tension: 0.3,
-          pointBackgroundColor: '#0ea5e9'
-        }] 
+      data: {
+        labels: fechas,
+        datasets: [
+          {
+            label: 'Peso Real',
+            data: pesos,
+            borderColor: '#0ea5e9',
+            tension: 0.3,
+            pointBackgroundColor: '#0ea5e9'
+          },
+          {
+            label: 'Peso Ideal',
+            data: Array(fechas.length).fill(calcularIdeal(clienteActual).pesoIdeal),
+            borderColor: '#10b981',
+            borderDash: [5, 5],
+            tension: 0
+          }
+        ]
       },
-      options: { responsive: true, scales: { y: { beginAtZero: false } }}
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: false } }
+      }
     });
   }
 
+  // Funciones restantes (agregarAvance, eliminar, cerrar, etc.)
   function agregarAvance() {
     if (!clienteActual) return;
     const fecha = document.getElementById('fechaAvance').value;
@@ -315,7 +280,6 @@
 
     localStorage.setItem('clientesBaldan', JSON.stringify(clientes));
     renderHistorialYGrafica();
-
     document.getElementById('pesoAvance').value = '';
     document.getElementById('grasaAvance').value = '';
   }
@@ -329,16 +293,12 @@
     }
   }
 
-  function cerrarModal() { 
-    document.getElementById('modalCliente').classList.add('hidden'); 
-  }
-
+  function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
   function cerrarDetalle() { 
     document.getElementById('modalDetalle').classList.add('hidden'); 
     clienteActual = null; 
   }
 
-  // Inicializar
   window.onload = () => renderLista();
 </script>
 </body>
