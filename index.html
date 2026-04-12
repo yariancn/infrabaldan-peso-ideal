@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style> 
     body { font-family: system-ui; } 
+    .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -41,7 +42,7 @@
 <!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
-    <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
+    <h2 class="text-2xl font-bold mb-6" id="modalTitulo">Nuevo Cliente</h2>
     
     <div class="space-y-5">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
@@ -65,7 +66,7 @@
 
     <div class="flex gap-3 mt-8">
       <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
-      <button onclick="guardarCliente()" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
+      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
     </div>
   </div>
 </div>
@@ -74,6 +75,7 @@
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
+  let clienteActual = null;
   let usaLibras = false;
 
   function actualizarGrasaIdeal() {
@@ -102,6 +104,7 @@
     renderLista();
   }
 
+  // Cargar clientes
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
@@ -109,11 +112,15 @@
       renderLista();
     } catch (e) {
       console.error(e);
-      alert("Error al cargar clientes. Revisa tu conexión.");
     }
   }
 
+  // Guardar cliente
   async function guardarCliente() {
+    const btn = document.getElementById('btnGuardar');
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+
     const cliente = {
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
       sexo: document.getElementById('sexo').value,
@@ -131,16 +138,19 @@
         body: JSON.stringify({ action: "guardarCliente", cliente: cliente })
       });
       const result = await res.json();
-      
+
       if (result.success) {
         alert("✅ Cliente guardado correctamente");
         cerrarModal();
-        cargarClientes();
+        await cargarClientes();
       } else {
-        alert("Error: " + (result.message || ""));
+        alert("Error: " + (result.message || "Desconocido"));
       }
     } catch (e) {
       alert("Error de conexión al guardar");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Guardar Cliente";
     }
   }
 
@@ -158,7 +168,7 @@
       const unidad = usaLibras ? "lbs" : "kg";
 
       const card = document.createElement('div');
-      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
+      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl card-hover transition";
       card.innerHTML = `
         <div class="font-semibold text-xl mb-1">${c.nombre}</div>
         <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años</div>
@@ -174,9 +184,15 @@
           Bajar <strong>${convertirPeso(calc.kgBajar)} ${unidad}</strong> → ${calc.semanas} semanas
         </div>
       `;
-      card.onclick = () => alert("Detalle de " + c.nombre + "\n\nPronto disponible");
+      card.onclick = () => verDetalle(c);
       container.appendChild(card);
     });
+  }
+
+  function verDetalle(c) {
+    clienteActual = c;
+    alert(`Cliente seleccionado:\n\nNombre: ${c.nombre}\nSexo: ${c.sexo}\nEdad: ${c.edad}\nPeso: ${c.peso} kg\n\nEl detalle completo se está desarrollando.`);
+    // Aquí iremos agregando el modal completo más adelante
   }
 
   function nuevoCliente() {
@@ -194,6 +210,7 @@
     document.getElementById('modalCliente').classList.add('hidden');
   }
 
+  // Inicializar
   window.onload = () => {
     cargarClientes();
   };
