@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infra Baldan - Seguimiento</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style> body { font-family: system-ui; } </style>
+</head>
+<body class="bg-gray-50">
+
+<div class="max-w-6xl mx-auto p-6">
+  <h1 class="text-4xl font-bold text-center mb-8 text-black">Infra Baldan - Peso Ideal</h1>
+  
+  <button onclick="nuevoCliente()" 
+          class="bg-black text-white px-6 py-3 rounded-2xl mb-6 hover:bg-gray-800">
+    + Nuevo Cliente
+  </button>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
+</div>
+
+<!-- Modal Cliente -->
+<div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
+    <h2 class="text-2xl font-bold mb-6" id="modalTitulo">Nuevo Cliente</h2>
+    <div class="space-y-4">
+      <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl">
+      <div class="grid grid-cols-2 gap-4">
+        <select id="sexo" class="px-4 py-3 border rounded-2xl">
+          <option value="M">Hombre</option>
+          <option value="F">Mujer</option>
+        </select>
+        <input id="edad" type="number" placeholder="Edad" class="px-4 py-3 border rounded-2xl">
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <input id="altura" type="number" placeholder="Altura cm" class="px-4 py-3 border rounded-2xl">
+        <input id="peso" type="number" step="0.1" placeholder="Peso kg" class="px-4 py-3 border rounded-2xl">
+        <input id="grasa" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
+      </div>
+      <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl">
+    </div>
+    <div class="flex gap-3 mt-8">
+      <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600">Cancelar</button>
+      <button onclick="guardarCliente()" class="flex-1 bg-black text-white py-4 rounded-2xl">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalle + Gráfica -->
+<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[90vh] overflow-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold" id="nombreDetalle"></h2>
+      <button onclick="cerrarDetalle()" class="text-3xl leading-none">×</button>
+    </div>
+
+    <div id="resumenCalculo" class="bg-gray-100 rounded-2xl p-6 mb-8"></div>
+
+    <!-- Registrar avance -->
+    <h3 class="font-medium mb-3">Registrar avance semanal</h3>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
+      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso kg" class="px-4 py-3 border rounded-2xl">
+      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
+      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl">Guardar Avance</button>
+    </div>
+
+    <!-- Gráfica -->
+    <canvas id="grafica" class="mb-8"></canvas>
+
+    <!-- Historial -->
+    <h3 class="font-medium mb-3">Historial de avances</h3>
+    <table class="w-full text-sm" id="tablaHistorial"></table>
+
+    <button onclick="eliminarClienteActual()" class="mt-8 text-red-600 text-sm">Eliminar este cliente</button>
+  </div>
+</div>
+
+<script>
+  let clientes = JSON.parse(localStorage.getItem('clientesBaldan')) || [];
+  let clienteActual = null;
+  let chartInstance = null;
+
+  function calcularIdeal(c) {
+    const lbm = c.peso * (1 - c.grasa / 100);
+    const target = c.grasaObjetivo || (c.sexo === 'M' ? 15 : 22);
+    const ideal = lbm / (1 - target / 100);
+    const bajar = Math.max(0, c.peso - ideal);
+    const semanas = bajar > 0 ? Math.ceil(bajar) : 0;
+    return { ideal: ideal.toFixed(1), bajar: bajar.toFixed(1), semanas };
+  }
+
+  function renderLista() {
+    const container = document.getElementById('listaClientes');
+    container.innerHTML = '';
+    clientes.forEach((c, i) => {
+      const calc = calcularIdeal(c);
+      const card = document.createElement('div');
+      card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl";
+      card.innerHTML = `
+        <div class="font-semibold text-xl">${c.nombre}</div>
+        <div class="text-gray-500 text-sm">${c.sexo} • ${c.edad} años • ${c.altura} cm</div>
+        <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+          <div>Actual: <span class="font-medium">${c.peso} kg (${c.grasa}% grasa)</span></div>
+          <div>Ideal: <span class="font-medium">${calc.ideal} kg</span></div>
+          <div class="col-span-2 text-xs bg-gray-100 rounded-2xl px-4 py-2">Bajar ${calc.bajar} kg → ${calc.semanas} semanas (1 kg/sem)</div>
+        </div>
+      `;
+      card.onclick = () => verDetalle(i);
+      container.appendChild(card);
+    });
+  }
+
+  function nuevoCliente() {
+    clienteActual = null;
+    document.getElementById('modalTitulo').textContent = 'Nuevo Cliente';
+    document.getElementById('nombre').value = '';
+    document.getElementById('sexo').value = 'M';
+    document.getElementById('edad').value = '';
+    document.getElementById('altura').value = '';
+    document.getElementById('peso').value = '';
+    document.getElementById('grasa').value = '';
+    document.getElementById('grasaObjetivo').value = 15;
+    document.getElementById('modalCliente').classList.remove('hidden');
+  }
+
+  function guardarCliente() {
+    const cliente = {
+      nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
+      sexo: document.getElementById('sexo').value,
+      edad: parseFloat(document.getElementById('edad').value) || 30,
+      altura: parseFloat(document.getElementById('altura').value) || 170,
+      peso: parseFloat(document.getElementById('peso').value) || 80,
+      grasa: parseFloat(document.getElementById('grasa').value) || 25,
+      grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value) || 15,
+      avances: clienteActual ? clienteActual.avances : []
+    };
+
+    if (clienteActual) {
+      clientes[clienteActual.index] = cliente;
+    } else {
+      clientes.push(cliente);
+    }
+
+    localStorage.setItem('clientesBaldan', JSON.stringify(clientes));
+    cerrarModal();
+    renderLista();
+  }
+
+  function verDetalle(index) {
+    clienteActual = { ...clientes[index], index };
+    document.getElementById('nombreDetalle').textContent = clienteActual.nombre;
+    
+    const calc = calcularIdeal(clienteActual);
+    document.getElementById('resumenCalculo').innerHTML = `
+      <div class="grid grid-cols-3 text-center">
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${clienteActual.peso} kg</div></div>
+        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${calc.ideal} kg</div></div>
+        <div><div class="text-xs text-gray-500">TIEMPO ESTIMADO</div><div class="text-3xl font-bold">${calc.semanas} semanas</div></div>
+      </div>
+    `;
+
+    document.getElementById('modalDetalle').classList.remove('hidden');
+    renderHistorialYGrafica();
+  }
+
+  function renderHistorialYGrafica() {
+    const tbody = document.getElementById('tablaHistorial');
+    tbody.innerHTML = `
+      <tr class="bg-gray-100">
+        <th class="px-4 py-2 text-left">Fecha</th>
+        <th class="px-4 py-2 text-left">Peso</th>
+        <th class="px-4 py-2 text-left">% Grasa</th>
+      </tr>
+    `;
+
+    const fechas = [];
+    const pesos = [];
+    const grasas = [];
+
+    clienteActual.avances.forEach(a => {
+      const row = document.createElement('tr');
+      row.className = "border-b";
+      row.innerHTML = `<td class="px-4 py-3">${a.fecha}</td><td class="px-4 py-3">${a.peso} kg</td><td class="px-4 py-3">${a.grasa}%</td>`;
+      tbody.appendChild(row);
+
+      fechas.push(a.fecha);
+      pesos.push(a.peso);
+      grasas.push(a.grasa);
+    });
+
+    // Gráfica
+    if (chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('grafica');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: fechas,
+        datasets: [{
+          label: 'Peso (kg)',
+          data: pesos,
+          borderColor: '#000000',
+          tension: 0.3,
+          yAxisID: 'y'
+        }]
+      },
+      options: { scales: { y: { beginAtZero: false } } }
+    });
+  }
+
+  function agregarAvance() {
+    if (!clienteActual) return;
+    const fecha = document.getElementById('fechaAvance').value;
+    const peso = parseFloat(document.getElementById('pesoAvance').value);
+    const grasa = parseFloat(document.getElementById('grasaAvance').value);
+
+    if (!fecha || !peso) {
+      alert("Fecha y peso son obligatorios");
+      return;
+    }
+
+    clienteActual.avances.unshift({ fecha, peso, grasa });
+    clientes[clienteActual.index].avances = clienteActual.avances;
+
+    localStorage.setItem('clientesBaldan', JSON.stringify(clientes));
+    renderHistorialYGrafica();
+
+    // Limpiar campos
+    document.getElementById('pesoAvance').value = '';
+    document.getElementById('grasaAvance').value = '';
+  }
+
+  function eliminarClienteActual() {
+    if (confirm("¿Eliminar este cliente y todo su historial?")) {
+      clientes.splice(clienteActual.index, 1);
+      localStorage.setItem('clientesBaldan', JSON.stringify(clientes));
+      cerrarDetalle();
+      renderLista();
+    }
+  }
+
+  function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
+  function cerrarDetalle() { 
+    document.getElementById('modalDetalle').classList.add('hidden'); 
+    clienteActual = null; 
+  }
+
+  window.onload = () => renderLista();
+</script>
+</body>
+</html>
