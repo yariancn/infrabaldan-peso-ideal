@@ -77,7 +77,6 @@
 
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
 
-    <!-- Barra de Progreso -->
     <div id="progresoContainer" class="mb-8"></div>
 
     <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
@@ -107,9 +106,6 @@
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
 
   let clientes = [];
-  let clienteActual = null;
-  let chartInstance = null;
-  let usaLibras = false;
 
   function actualizarGrasaIdeal() {
     const sexo = document.getElementById('sexo').value;
@@ -125,16 +121,6 @@
     const kgBajar = Math.max(0, peso - pesoIdeal);
     const semanas = kgBajar > 0 ? Math.ceil(kgBajar) : 0;
     return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), semanas, grasaIdeal };
-  }
-
-  function convertirPeso(pesoKg) {
-    return usaLibras ? (pesoKg * 2.20462).toFixed(1) : parseFloat(pesoKg).toFixed(1);
-  }
-
-  function toggleUnidades() {
-    usaLibras = !usaLibras;
-    document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
-    renderLista();
   }
 
   async function cargarClientes() {
@@ -202,7 +188,6 @@
   }
 
   function verDetalle(c) {
-    clienteActual = c;
     document.getElementById('nombreDetalle').textContent = c.nombre;
 
     const calc = calcularIdeal(c);
@@ -237,18 +222,18 @@
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "Sin registrar";
     document.getElementById('semanasTranscurridas').textContent = "0 semanas";
 
-    // Gráfica simple (solo peso ideal por ahora)
+    // Gráfica de peso
     document.getElementById('modalDetalle').classList.remove('hidden');
 
-    // Crear gráfica básica
     setTimeout(() => {
-      const ctx = document.createElement('canvas');
-      ctx.id = 'grafica';
-      ctx.height = 140;
-      document.getElementById('modalDetalle').querySelector('canvas') ? document.getElementById('modalDetalle').querySelector('canvas').remove() : null;
-      document.getElementById('modalDetalle').appendChild(ctx);
+      const canvas = document.createElement('canvas');
+      canvas.id = 'grafica';
+      canvas.height = 160;
+      const oldCanvas = document.getElementById('grafica');
+      if (oldCanvas) oldCanvas.remove();
+      document.getElementById('modalDetalle').appendChild(canvas);
 
-      new Chart(ctx, {
+      new Chart(canvas, {
         type: 'line',
         data: {
           labels: ['Inicio', 'Actual'],
@@ -257,7 +242,8 @@
               label: 'Peso Real',
               data: [c.peso, c.peso],
               borderColor: '#0ea5e9',
-              tension: 0.3
+              tension: 0.3,
+              pointBackgroundColor: '#0ea5e9'
             },
             {
               label: 'Peso Ideal',
@@ -269,10 +255,12 @@
         },
         options: {
           responsive: true,
-          scales: { y: { beginAtZero: false } }
+          scales: {
+            y: { beginAtZero: false }
+          }
         }
       });
-    }, 300);
+    }, 100);
   }
 
   function nuevoCliente() {
