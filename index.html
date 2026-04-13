@@ -129,8 +129,10 @@
     // Conversión real de los números en el modal
     const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
     if (pesoEls.length >= 2) {
-      let pesoActual = parseFloat(pesoEls[0].textContent.replace(/[^0-9.]/g, ''));
-      let pesoIdeal = parseFloat(pesoEls[3].textContent.replace(/[^0-9.]/g, ''));
+      let pesoActual = parseFloat(pesoEls[0].textContent);
+      let pesoIdeal = parseFloat(pesoEls[3].textContent);
+
+      if (isNaN(pesoActual) || isNaN(pesoIdeal)) return;
 
       if (usaLibras) {
         pesoActual = (pesoActual * 2.20462).toFixed(1);
