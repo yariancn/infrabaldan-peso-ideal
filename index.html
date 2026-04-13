@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,26 +9,35 @@
   <style>
     body { font-family: system-ui; }
     #graficaContainer { height: 250px; position: relative; }
+    
+    /* Print Styles for PDF Generation */
+    @media print {
+      body * { visibility: hidden; }
+      #modalDetalle, #modalDetalle * { visibility: visible; }
+      #modalDetalle { position: absolute; left: 0; top: 0; width: 100%; max-height: none; overflow: visible; }
+      button, .no-print { display: none !important; }
+      .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body class="bg-gray-50">
 
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col items-center mb-6">
-    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4" onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
-    <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
-    <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
+    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-[30px] mb-4" onerror="this.src='https://via.placeholder.com/150x30/0ea5e9/ffffff?text=OXY+HYPERBARIC';">
+    <h1 class="text-3xl font-bold text-center text-black">Infra Baldan</h1>
+    <p class="text-gray-500">Weight & Body Composition Tracking</p>
   </div>
 
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
     <button onclick="nuevoCliente()" class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
-      <span>+</span> Nuevo Cliente
+      <span>+</span> New Client
     </button>
     <div class="flex gap-3 w-full sm:w-auto">
       <button onclick="toggleUnidadesGlobal()" class="bg-white border border-gray-300 px-6 py-3 rounded-2xl text-sm font-medium">
-        Unidades: <span id="unidadGlobalText">kg / cm</span>
+        Units: <span id="unidadGlobalText">kg / cm</span>
       </button>
-      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
+      <input id="buscar" type="text" placeholder="Search client..." onkeyup="renderLista()" class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
     </div>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
@@ -36,27 +45,28 @@
 
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
-    <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
+    <h2 class="text-2xl font-bold mb-6">New Client</h2>
     <div class="space-y-5">
-      <input id="idPaciente" placeholder="ID del Paciente (Manual)" class="w-full px-4 py-3 border border-blue-200 rounded-2xl text-lg font-bold bg-blue-50">
-      <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
+      <input id="idPaciente" placeholder="Patient ID (Manual)" class="w-full px-4 py-3 border border-blue-200 rounded-2xl text-lg font-bold bg-blue-50">
+      <input id="nombre" placeholder="Full Name" class="w-full px-4 py-3 border rounded-2xl text-lg">
       <div class="grid grid-cols-2 gap-4">
         <select id="sexo" onchange="actualizarGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
-          <option value="M">Hombre</option>
-          <option value="F">Mujer</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
         </select>
-        <input id="edad" type="number" placeholder="Edad" class="px-4 py-3 border rounded-2xl">
+        <input id="edad" type="number" placeholder="Age" class="px-4 py-3 border rounded-2xl">
       </div>
       <div class="grid grid-cols-3 gap-4">
-        <input id="altura" type="number" step="0.1" placeholder="Altura (cm)" class="px-4 py-3 border rounded-2xl">
-        <input id="peso" type="number" step="0.1" placeholder="Peso (kg)" class="px-4 py-3 border rounded-2xl">
-        <input id="grasa" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
+        <input id="altura" type="number" step="0.1" placeholder="Height (cm)" class="px-4 py-3 border rounded-2xl">
+        <input id="peso" type="number" step="0.1" placeholder="Weight (kg)" class="px-4 py-3 border rounded-2xl">
+        <input id="grasa" type="number" step="0.1" placeholder="% Fat" class="px-4 py-3 border rounded-2xl">
       </div>
+      <label class="text-xs text-gray-400 block ml-2">Goal Body Fat %</label>
       <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
     </div>
     <div class="flex gap-3 mt-8">
-      <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
-      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Guardar Cliente</button>
+      <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancel</button>
+      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Save Client</button>
     </div>
   </div>
 </div>
@@ -65,32 +75,35 @@
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
-      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black ml-4">×</button>
+      <div class="flex gap-2 no-print">
+        <button onclick="window.print()" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold">Print PDF</button>
+        <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black ml-4">×</button>
+      </div>
     </div>
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
     <div id="progresoContainer" class="mb-8"></div>
     <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
       <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Fecha de inicio</div>
+        <div class="text-gray-500">Start Date</div>
         <div class="font-medium" id="fechaInicio"></div>
       </div>
       <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Meta estimada</div>
+        <div class="text-gray-500">Estimated Goal Time</div>
         <div class="font-medium" id="tiempoMeta"></div>
       </div>
     </div>
     <div class="mb-8">
-      <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución vs Objetivo (2 lbs/semana)</h4>
+      <h4 class="text-sm font-medium text-gray-600 mb-3">Weight Evolution vs Goal (2 lbs/week)</h4>
       <div id="graficaContainer" class="border border-gray-200 rounded-3xl p-4 bg-white">
         <canvas id="grafica"></canvas>
       </div>
     </div>
-    <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
-    <div class="grid grid-cols-3 gap-4 mb-8">
+    <h3 class="font-semibold mb-4 no-print">Add Weekly Progress</h3>
+    <div class="grid grid-cols-3 gap-4 mb-8 no-print">
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
-      <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
-      <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
-      <button onclick="agregarAvance()" id="btnAvance" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
+      <input id="pesoAvance" type="number" step="0.1" placeholder="Weight" class="px-4 py-3 border rounded-2xl">
+      <input id="grasaAvance" type="number" step="0.1" placeholder="% Fat" class="px-4 py-3 border rounded-2xl">
+      <button onclick="agregarAvance()" id="btnAvance" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Save Progress</button>
     </div>
   </div>
 </div>
@@ -104,16 +117,16 @@
 
   const KG_TO_LBS = 2.20462;
   const CM_TO_IN = 2.54;
-  const BAJA_POR_SEMANA_KG = 0.907; // 2 lbs en kg
+  const BAJA_POR_SEMANA_KG = 0.907;
 
   function toggleUnidadesGlobal() {
     usaLibras = !usaLibras;
     const uP = usaLibras ? "lbs" : "kg";
     const uA = usaLibras ? "in" : "cm";
     document.getElementById('unidadGlobalText').textContent = `${uP} / ${uA}`;
-    document.getElementById('peso').placeholder = `Peso (${uP})`;
-    document.getElementById('altura').placeholder = `Altura (${uA})`;
-    document.getElementById('pesoAvance').placeholder = `Peso (${uP})`;
+    document.getElementById('peso').placeholder = `Weight (${uP})`;
+    document.getElementById('altura').placeholder = `Height (${uA})`;
+    document.getElementById('pesoAvance').placeholder = `Weight (${uP})`;
     if (clienteSeleccionado) verDetalle(clienteSeleccionado);
   }
 
@@ -143,9 +156,9 @@
 
   async function guardarCliente() {
     const id = document.getElementById('idPaciente').value.trim();
-    if(!id) return alert("ID requerido");
+    if(!id) return alert("ID Required");
     const btn = document.getElementById('btnGuardar');
-    btn.disabled = true; btn.textContent = "Guardando...";
+    btn.disabled = true; btn.textContent = "Saving...";
     let p = parseFloat(document.getElementById('peso').value) || 0;
     let a = parseFloat(document.getElementById('altura').value) || 170;
     if (usaLibras) { p /= KG_TO_LBS; a *= CM_TO_IN; }
@@ -156,8 +169,8 @@
       fechaInicio: new Date().toISOString()
     };
     await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
-    alert("Cliente guardado."); cerrarModal(); cargarClientes();
-    btn.disabled = false; btn.textContent = "Guardar Cliente";
+    alert("Client Saved."); cerrarModal(); cargarClientes();
+    btn.disabled = false; btn.textContent = "Save Client";
   }
 
   function renderLista() {
@@ -168,7 +181,7 @@
       if (c.nombre.toLowerCase().includes(term)) {
         const card = document.createElement('div');
         card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
-        card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div><div class="text-gray-500 text-sm">${c.sexo === 'M' ? 'H' : 'M'} • ${c.edad} años</div>`;
+        card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div><div class="text-gray-500 text-sm">${c.sexo === 'M' ? 'Male' : 'Female'} • ${c.edad} yrs</div>`;
         card.onclick = () => verDetalle(c);
         container.appendChild(card);
       }
@@ -189,21 +202,21 @@
     document.getElementById('nombreDetalle').textContent = c.nombre;
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${(ultimoPeso * factor).toFixed(1)} ${u}</div></div>
-        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${(listaAvances.length > 0 ? listaAvances[listaAvances.length-1].grasa : c.grasa)}%</div></div>
-        <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
-        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${(calc.pesoIdeal * factor).toFixed(1)} ${u}</div></div>
+        <div><div class="text-xs text-gray-500">CURRENT WEIGHT</div><div class="text-3xl font-bold">${(ultimoPeso * factor).toFixed(1)} ${u}</div></div>
+        <div><div class="text-xs text-gray-500">CURRENT FAT %</div><div class="text-3xl font-bold">${(listaAvances.length > 0 ? listaAvances[listaAvances.length-1].grasa : c.grasa)}%</div></div>
+        <div><div class="text-xs text-gray-500">GOAL FAT %</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
+        <div><div class="text-xs text-gray-500">GOAL WEIGHT</div><div class="text-3xl font-bold">${(calc.pesoIdeal * factor).toFixed(1)} ${u}</div></div>
       </div>`;
 
     document.getElementById('progresoContainer').innerHTML = `
       <div class="bg-white border p-6 rounded-3xl">
-        <div class="flex justify-between mb-2"><span class="font-medium">Progreso</span><span class="font-bold text-green-600">${pct.toFixed(0)}%</span></div>
+        <div class="flex justify-between mb-2"><span class="font-medium">Overall Progress</span><span class="font-bold text-green-600">${pct.toFixed(0)}%</span></div>
         <div class="w-full bg-gray-200 h-3 rounded-full"><div class="bg-green-500 h-3 rounded-full" style="width:${pct}%"></div></div>
-        <p class="text-xs text-gray-400 mt-2">Faltan ${( (calc.pesoIdeal < ultimoPeso ? ultimoPeso - calc.pesoIdeal : 0) * factor).toFixed(1)} ${u} para la meta.</p>
+        <p class="text-xs text-gray-400 mt-2">${( (calc.pesoIdeal < ultimoPeso ? ultimoPeso - calc.pesoIdeal : 0) * factor).toFixed(1)} ${u} left to reach target.</p>
       </div>`;
 
     document.getElementById('fechaInicio').textContent = new Date(c.fechaInicio).toLocaleDateString();
-    document.getElementById('tiempoMeta').textContent = `${calc.semanas} semanas (aprox)`;
+    document.getElementById('tiempoMeta').textContent = `${calc.semanas} weeks (est.)`;
     document.getElementById('modalDetalle').classList.remove('hidden');
     actualizarGrafica(c, factor, calc.pesoIdeal);
   }
@@ -211,55 +224,32 @@
   function actualizarGrafica(c, factor, pesoIdeal) {
     if (chartInstance) chartInstance.destroy();
     const ctx = document.getElementById('grafica').getContext('2d');
-    
-    const labels = ["Inicio"];
+    const labels = ["Start"];
     const dataReal = [c.peso * factor];
     const dataObjetivo = [c.peso * factor];
-    
-    // Datos reales
     if(c.avances) {
       c.avances.forEach((a, i) => {
-        labels.push("Sem " + (i+1));
+        labels.push("Wk " + (i+1));
         dataReal.push(a.peso * factor);
       });
     }
-
-    // Proyección Objetivo (2 lbs por semana)
     let pesoProyectado = c.peso;
-    for(let i = 1; i <= 12; i++) { // Proyectamos 12 semanas
-      if (labels.length <= i) labels.push("Sem " + i);
+    for(let i = 1; i <= 12; i++) {
+      if (labels.length <= i) labels.push("Wk " + i);
       pesoProyectado -= BAJA_POR_SEMANA_KG;
       if (pesoProyectado < pesoIdeal) pesoProyectado = pesoIdeal;
       dataObjetivo.push(pesoProyectado * factor);
     }
-
     chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels: labels,
         datasets: [
-          {
-            label: 'Peso Real',
-            data: dataReal,
-            borderColor: '#000',
-            borderWidth: 3,
-            fill: false
-          },
-          {
-            label: 'Trayectoria Ideal (2lbs/sem)',
-            data: dataObjetivo,
-            borderColor: '#3b82f6',
-            borderDash: [5, 5],
-            fill: false,
-            pointRadius: 0
-          }
+          { label: 'Actual Weight', data: dataReal, borderColor: '#000', borderWidth: 3, fill: false },
+          { label: 'Ideal Path (2lbs/wk)', data: dataObjetivo, borderColor: '#3b82f6', borderDash: [5, 5], fill: false, pointRadius: 0 }
         ]
       },
-      options: { 
-        responsive: true, 
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: false } }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
@@ -268,12 +258,12 @@
     let p = parseFloat(document.getElementById('pesoAvance').value);
     let g = parseFloat(document.getElementById('grasaAvance').value);
     let f = document.getElementById('fechaAvance').value;
-    if(!p || !g || !f) return alert("Faltan datos");
-    btn.disabled = true; btn.textContent = "Guardando...";
+    if(!p || !g || !f) return alert("All fields required");
+    btn.disabled = true; btn.textContent = "Saving...";
     if (usaLibras) p /= KG_TO_LBS;
     await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }})});
-    alert("Avance guardado."); cerrarDetalle(); cargarClientes();
-    btn.disabled = false; btn.textContent = "Guardar Avance";
+    alert("Progress Saved."); cerrarDetalle(); cargarClientes();
+    btn.disabled = false; btn.textContent = "Save Progress";
   }
 
   function nuevoCliente() { document.getElementById('modalCliente').classList.remove('hidden'); }
