@@ -126,7 +126,7 @@
     const texto = usaLibras ? "lbs / inches" : "kg / cm";
     document.getElementById('unidadActual').textContent = texto;
 
-    // Conversión real de los números en el modal
+    // Conversión real
     const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
     if (pesoEls.length >= 2) {
       let pesoActual = parseFloat(pesoEls[0].textContent);
