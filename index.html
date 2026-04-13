@@ -53,8 +53,8 @@
         <input id="edad" type="number" placeholder="Edad" class="px-4 py-3 border rounded-2xl">
       </div>
       <div class="grid grid-cols-3 gap-4">
-        <input id="altura" type="number" step="0.1" placeholder="Altura" class="px-4 py-3 border rounded-2xl">
-        <input id="peso" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
+        <input id="altura" type="number" step="0.1" placeholder="Altura (cm)" class="px-4 py-3 border rounded-2xl">
+        <input id="peso" type="number" step="0.1" placeholder="Peso (kg)" class="px-4 py-3 border rounded-2xl">
         <input id="grasa" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
       </div>
       <div>
@@ -114,35 +114,22 @@
   let clienteSeleccionado = null;
   let usaLibras = false;
 
-  // CONSTANTES DE CONVERSIÓN
   const KG_TO_LBS = 2.20462;
   const CM_TO_IN = 2.54;
 
   function toggleUnidadesGlobal() {
     usaLibras = !usaLibras;
-    const unidadText = usaLibras ? "lbs / inches" : "kg / cm";
-    document.getElementById('unidadGlobalText').textContent = unidadText;
+    const uPeso = usaLibras ? "lbs" : "kg";
+    const uAltura = usaLibras ? "in" : "cm";
     
-    // Si hay un cliente abierto, refrescar su detalle para convertir valores
-    if (clienteSeleccionado) {
-      verDetalle(clienteSeleccionado);
-    }
+    document.getElementById('unidadGlobalText').textContent = `${uPeso} / ${uAltura}`;
     
-    // Si el modal de nuevo cliente está abierto, convertir los inputs actuales
-    if (!document.getElementById('modalCliente').classList.contains('hidden')) {
-      convertirInputsNuevoCliente();
-    }
-  }
-
-  function convertirInputsNuevoCliente() {
-    const h = document.getElementById('altura');
-    const p = document.getElementById('peso');
-    if (h.value) {
-      h.value = usaLibras ? (parseFloat(h.value) / CM_TO_IN).toFixed(1) : (parseFloat(h.value) * CM_TO_IN).toFixed(1);
-    }
-    if (p.value) {
-      p.value = usaLibras ? (parseFloat(p.value) * KG_TO_LBS).toFixed(1) : (parseFloat(p.value) / KG_TO_LBS).toFixed(1);
-    }
+    // Actualizar placeholders en formularios
+    document.getElementById('peso').placeholder = `Peso (${uPeso})`;
+    document.getElementById('altura').placeholder = `Altura (${uAltura})`;
+    document.getElementById('pesoAvance').placeholder = `Peso (${uPeso})`;
+    
+    if (clienteSeleccionado) verDetalle(clienteSeleccionado);
   }
 
   function actualizarGrasaIdeal() {
@@ -157,12 +144,7 @@
     const masaMagra = peso * (1 - grasaActual / 100);
     const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
     const kgBajar = Math.max(0, peso - pesoIdeal);
-    
-    return { 
-      pesoIdeal: pesoIdeal, 
-      kgBajar: kgBajar, 
-      grasaIdeal: grasaIdeal 
-    };
+    return { pesoIdeal, kgBajar, grasaIdeal };
   }
 
   async function cargarClientes() {
@@ -181,7 +163,6 @@
     let pesoVal = parseFloat(document.getElementById('peso').value) || 0;
     let alturaVal = parseFloat(document.getElementById('altura').value) || 170;
 
-    // NORMALIZACIÓN: Si el usuario ingresó en sistema inglés, convertir a métrico antes de guardar
     if (usaLibras) {
       pesoVal = pesoVal / KG_TO_LBS;
       alturaVal = alturaVal * CM_TO_IN;
@@ -200,13 +181,12 @@
     };
 
     try {
-      const res = await fetch(WEB_APP_URL, {
+      await fetch(WEB_APP_URL, {
         method: 'POST',
-        mode: 'no-cors', // Dependiendo de tu Apps Script, esto podría variar
+        mode: 'no-cors',
         body: JSON.stringify({ action: "guardarCliente", cliente })
       });
-      
-      alert("✅ Solicitud enviada. (Nota: Si usas no-cors no verás respuesta JSON, pero el dato se guarda)");
+      alert("✅ Solicitud de guardado enviada.");
       cerrarModal();
       setTimeout(cargarClientes, 1500);
     } catch (e) {
@@ -241,7 +221,6 @@
     document.getElementById('nombreDetalle').textContent = c.nombre;
     const calc = calcularIdeal(c);
 
-    // Conversión para visualización
     let pActual = c.peso;
     let pIdeal = calc.pesoIdeal;
     let u = "kg";
@@ -261,8 +240,7 @@
       </div>
     `;
 
-    // Cálculo de progreso
-    const kgBajados = 0; // Esto debería calcularse comparando el peso actual del último avance vs peso inicial
+    const kgBajados = 0; 
     const porcentaje = calc.kgBajar > 0 ? Math.min(100, (kgBajados / calc.kgBajar) * 100) : 100;
 
     document.getElementById('progresoContainer').innerHTML = `
@@ -282,28 +260,14 @@
 
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "---";
     document.getElementById('modalDetalle').classList.remove('hidden');
-    document.getElementById('pesoAvance').placeholder = `Peso en ${u}`;
+    document.getElementById('pesoAvance').placeholder = `Peso (${u})`;
   }
 
   function agregarAvance() {
     if(!clienteSeleccionado) return;
-
     let pesoAvance = parseFloat(document.getElementById('pesoAvance').value);
-    const grasaAvance = parseFloat(document.getElementById('grasaAvance').value);
-    const fecha = document.getElementById('fechaAvance').value;
-
-    if (!pesoAvance || !grasaAvance || !fecha) {
-        alert("Por favor completa todos los datos del avance.");
-        return;
-    }
-
-    // Normalizar a KG si se ingresó en LBS
-    if (usaLibras) {
-      pesoAvance = pesoAvance / KG_TO_LBS;
-    }
-
-    alert(`Normalizando datos... Guardando ${pesoAvance.toFixed(2)} kg en la base de datos.`);
-    // Aquí iría el fetch POST a Google Sheets para guardar el avance
+    if (usaLibras) pesoAvance = pesoAvance / KG_TO_LBS;
+    alert(`Dato normalizado: ${pesoAvance.toFixed(2)} kg. Listo para guardar.`);
   }
 
   function nuevoCliente() {
@@ -312,6 +276,12 @@
     document.getElementById('altura').value = '';
     document.getElementById('peso').value = '';
     document.getElementById('grasa').value = '';
+    
+    const uPeso = usaLibras ? "lbs" : "kg";
+    const uAltura = usaLibras ? "in" : "cm";
+    document.getElementById('peso').placeholder = `Peso (${uPeso})`;
+    document.getElementById('altura').placeholder = `Altura (${uAltura})`;
+
     actualizarGrasaIdeal();
     document.getElementById('modalCliente').classList.remove('hidden');
   }
