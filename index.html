@@ -29,7 +29,7 @@
     <div class="flex gap-3 w-full sm:w-auto">
       <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
              class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
-      <button onclick="toggleUnidades()" id="btnUnidades"
+      <button onclick="toggleUnidades()" 
               class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
         Unidades: <span id="unidadActual">kg / cm</span>
       </button>
@@ -41,6 +41,7 @@
 
 <!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <!-- ... mismo modal nuevo cliente ... -->
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
     <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
     <div class="space-y-5">
@@ -123,27 +124,28 @@
 
   function toggleUnidades() {
     usaLibras = !usaLibras;
-    const texto = usaLibras ? "lbs / inches" : "kg / cm";
-    document.getElementById('unidadActual').textContent = texto;
+    document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
 
-    // Conversión real de números
-    const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
-    if (pesoEls.length >= 2) {
-      let pesoActual = parseFloat(pesoEls[0].textContent);
-      let pesoIdeal = parseFloat(pesoEls[3].textContent);
+    // Si el modal de detalle está abierto, convertimos los números
+    if (!document.getElementById('modalDetalle').classList.contains('hidden')) {
+      const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
+      if (pesoEls.length >= 2) {
+        let pesoActual = parseFloat(pesoEls[0].textContent.replace(/[^0-9.]/g, ''));
+        let pesoIdeal = parseFloat(pesoEls[3].textContent.replace(/[^0-9.]/g, ''));
 
-      if (isNaN(pesoActual) || isNaN(pesoIdeal)) return;
+        if (!isNaN(pesoActual) && !isNaN(pesoIdeal)) {
+          if (usaLibras) {
+            pesoActual = (pesoActual * 2.20462).toFixed(1);
+            pesoIdeal = (pesoIdeal * 2.20462).toFixed(1);
+          } else {
+            pesoActual = (pesoActual / 2.20462).toFixed(1);
+            pesoIdeal = (pesoIdeal / 2.20462).toFixed(1);
+          }
 
-      if (usaLibras) {
-        pesoActual = (pesoActual * 2.20462).toFixed(1);
-        pesoIdeal = (pesoIdeal * 2.20462).toFixed(1);
-      } else {
-        pesoActual = (pesoActual / 2.20462).toFixed(1);
-        pesoIdeal = (pesoIdeal / 2.20462).toFixed(1);
+          pesoEls[0].textContent = pesoActual + (usaLibras ? " lbs" : " kg");
+          pesoEls[3].textContent = pesoIdeal + (usaLibras ? " lbs" : " kg");
+        }
       }
-
-      pesoEls[0].textContent = pesoActual + (usaLibras ? " lbs" : " kg");
-      pesoEls[3].textContent = pesoIdeal + (usaLibras ? " lbs" : " kg");
     }
   }
 
@@ -157,6 +159,7 @@
     return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), grasaIdeal };
   }
 
+  // El resto del código se mantiene igual (cargarClientes, guardarCliente, renderLista, verDetalle, etc.)
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
