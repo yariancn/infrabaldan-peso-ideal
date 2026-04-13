@@ -8,41 +8,35 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     body { font-family: system-ui; }
-    #graficaContainer { max-height: 220px; position: relative; }
+    #graficaContainer { height: 220px; position: relative; }
   </style>
 </head>
 <body class="bg-gray-50">
 
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col items-center mb-6">
-    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-45 mb-4" onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
+    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4" onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
     <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
     <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
   </div>
 
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-    <button onclick="nuevoCliente()" 
-            class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
+    <button onclick="nuevoCliente()" class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
       <span>+</span> Nuevo Cliente
     </button>
-
     <div class="flex gap-3 w-full sm:w-auto">
-      <button onclick="toggleUnidadesGlobal()" 
-              class="bg-white border border-gray-300 px-6 py-3 rounded-2xl text-sm font-medium">
+      <button onclick="toggleUnidadesGlobal()" class="bg-white border border-gray-300 px-6 py-3 rounded-2xl text-sm font-medium">
         Unidades: <span id="unidadGlobalText">kg / cm</span>
       </button>
-      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
-             class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
+      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
     </div>
   </div>
-
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
 </div>
 
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
     <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
-    
     <div class="space-y-5">
       <input id="idPaciente" placeholder="ID del Paciente (Manual)" class="w-full px-4 py-3 border border-blue-200 rounded-2xl text-lg font-bold bg-blue-50">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
@@ -58,10 +52,7 @@
         <input id="peso" type="number" step="0.1" placeholder="Peso (kg)" class="px-4 py-3 border rounded-2xl">
         <input id="grasa" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
       </div>
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">Porcentaje de grasa ideal</label>
-        <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
-      </div>
+      <input id="grasaObjetivo" type="number" step="0.1" value="15" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
     </div>
     <div class="flex gap-3 mt-8">
       <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancelar</button>
@@ -76,10 +67,8 @@
       <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
       <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black ml-4">×</button>
     </div>
-
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
     <div id="progresoContainer" class="mb-8"></div>
-
     <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
       <div class="bg-white border rounded-2xl p-4">
         <div class="text-gray-500">Fecha de inicio</div>
@@ -90,14 +79,12 @@
         <div class="font-medium" id="semanasTranscurridas"></div>
       </div>
     </div>
-
     <div class="mb-8">
       <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
       <div id="graficaContainer" class="border border-gray-200 rounded-3xl p-4 bg-white">
-        <canvas id="grafica" height="180"></canvas>
+        <canvas id="grafica"></canvas>
       </div>
     </div>
-
     <h3 class="font-semibold mb-4">Registrar Avance Semanal</h3>
     <div class="grid grid-cols-3 gap-4 mb-8">
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
@@ -110,22 +97,19 @@
 
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
-
   let clientes = [];
   let clienteSeleccionado = null;
   let usaLibras = false;
+  let chartInstance = null;
 
   const KG_TO_LBS = 2.20462;
   const CM_TO_IN = 2.54;
 
   function toggleUnidadesGlobal() {
     usaLibras = !usaLibras;
-    const uPeso = usaLibras ? "lbs" : "kg";
-    const uAltura = usaLibras ? "in" : "cm";
-    document.getElementById('unidadGlobalText').textContent = `${uPeso} / ${uAltura}`;
-    document.getElementById('peso').placeholder = `Peso (${uPeso})`;
-    document.getElementById('altura').placeholder = `Altura (${uAltura})`;
-    document.getElementById('pesoAvance').placeholder = `Peso (${uPeso})`;
+    const uP = usaLibras ? "lbs" : "kg";
+    const uA = usaLibras ? "in" : "cm";
+    document.getElementById('unidadGlobalText').textContent = `${uP} / ${uA}`;
     if (clienteSeleccionado) verDetalle(clienteSeleccionado);
   }
 
@@ -140,8 +124,7 @@
     const grasaIdeal = parseFloat(c.grasaObjetivo) || (c.sexo === 'M' ? 15 : 22);
     const masaMagra = peso * (1 - grasaActual / 100);
     const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
-    const kgBajar = Math.max(0, peso - pesoIdeal);
-    return { pesoIdeal, kgBajar, grasaIdeal };
+    return { pesoIdeal, kgBajar: Math.max(0, peso - pesoIdeal), grasaIdeal };
   }
 
   async function cargarClientes() {
@@ -153,64 +136,36 @@
   }
 
   async function guardarCliente() {
-    const idManual = document.getElementById('idPaciente').value.trim();
-    if(!idManual) return alert("Por favor asigna un ID al paciente.");
-
+    const id = document.getElementById('idPaciente').value.trim();
+    if(!id) return alert("ID requerido");
     const btn = document.getElementById('btnGuardar');
-    btn.disabled = true;
-    btn.textContent = "Guardando...";
-
-    let pesoVal = parseFloat(document.getElementById('peso').value) || 0;
-    let alturaVal = parseFloat(document.getElementById('altura').value) || 170;
-
-    if (usaLibras) {
-      pesoVal = pesoVal / KG_TO_LBS;
-      alturaVal = alturaVal * CM_TO_IN;
-    }
+    btn.disabled = true; btn.textContent = "Guardando...";
+    
+    let p = parseFloat(document.getElementById('peso').value) || 0;
+    let a = parseFloat(document.getElementById('altura').value) || 170;
+    if (usaLibras) { p /= KG_TO_LBS; a *= CM_TO_IN; }
 
     const cliente = {
-      id: idManual,
-      nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
-      sexo: document.getElementById('sexo').value,
-      edad: parseFloat(document.getElementById('edad').value) || 30,
-      altura: alturaVal,
-      peso: pesoVal,
-      grasa: parseFloat(document.getElementById('grasa').value) || 0,
-      grasaObjetivo: parseFloat(document.getElementById('grasaObjetivo').value),
-      fechaInicio: new Date().toISOString().split('T')[0],
-      avances: []
+      id, nombre: document.getElementById('nombre').value, sexo: document.getElementById('sexo').value,
+      edad: document.getElementById('edad').value, altura: a, peso: p,
+      grasa: document.getElementById('grasa').value, grasaObjetivo: document.getElementById('grasaObjetivo').value,
+      fechaInicio: new Date().toISOString()
     };
 
-    try {
-      await fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({ action: "guardarCliente", cliente })
-      });
-      alert("✅ Cliente enviado correctamente.");
-      cerrarModal();
-      setTimeout(cargarClientes, 1500);
-    } catch (e) {
-      alert("Error al guardar");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Guardar Cliente";
-    }
+    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
+    alert("Cliente guardado."); cerrarModal(); cargarClientes();
+    btn.disabled = false; btn.textContent = "Guardar Cliente";
   }
 
   function renderLista() {
     const container = document.getElementById('listaClientes');
     container.innerHTML = '';
     const term = document.getElementById('buscar').value.toLowerCase();
-    clientes.forEach((c) => {
+    clientes.forEach(c => {
       if (c.nombre.toLowerCase().includes(term)) {
         const card = document.createElement('div');
         card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
-        card.innerHTML = `
-          <div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div>
-          <div class="font-semibold text-xl mb-1">${c.nombre}</div>
-          <div class="text-gray-500 text-sm">${c.sexo === 'M' ? 'Hombre' : 'Mujer'} • ${c.edad} años</div>
-        `;
+        card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div>`;
         card.onclick = () => verDetalle(c);
         container.appendChild(card);
       }
@@ -219,78 +174,78 @@
 
   function verDetalle(c) {
     clienteSeleccionado = c;
-    document.getElementById('nombreDetalle').textContent = c.nombre;
     const calc = calcularIdeal(c);
-    let pActual = c.peso;
-    let pIdeal = calc.pesoIdeal;
-    let u = "kg";
-    if (usaLibras) { pActual *= KG_TO_LBS; pIdeal *= KG_TO_LBS; u = "lbs"; }
+    const u = usaLibras ? "lbs" : "kg";
+    const factor = usaLibras ? KG_TO_LBS : 1;
 
+    // Lógica de Avances y Gráfica
+    const listaAvances = c.avances || [];
+    const ultimoPeso = listaAvances.length > 0 ? listaAvances[listaAvances.length - 1].peso : c.peso;
+    const kgBajados = Math.max(0, c.peso - ultimoPeso);
+    const pct = calc.kgBajar > 0 ? Math.min(100, (kgBajados / calc.kgBajar) * 100) : 100;
+
+    document.getElementById('nombreDetalle').textContent = c.nombre;
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${pActual.toFixed(1)} ${u}</div></div>
-        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${c.grasa}%</div></div>
+        <div><div class="text-xs text-gray-500">PESO ACTUAL</div><div class="text-3xl font-bold">${(ultimoPeso * factor).toFixed(1)} ${u}</div></div>
+        <div><div class="text-xs text-gray-500">GRASA ACTUAL</div><div class="text-3xl font-bold">${(listaAvances.length > 0 ? listaAvances[listaAvances.length-1].grasa : c.grasa)}%</div></div>
         <div><div class="text-xs text-gray-500">GRASA IDEAL</div><div class="text-3xl font-bold text-blue-600">${calc.grasaIdeal}%</div></div>
-        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${pIdeal.toFixed(1)} ${u}</div></div>
-      </div>
-    `;
+        <div><div class="text-xs text-gray-500">PESO IDEAL</div><div class="text-3xl font-bold">${(calc.pesoIdeal * factor).toFixed(1)} ${u}</div></div>
+      </div>`;
 
-    document.getElementById('fechaInicio').textContent = c.fechaInicio || "---";
+    document.getElementById('progresoContainer').innerHTML = `
+      <div class="bg-white border p-6 rounded-3xl">
+        <div class="flex justify-between mb-2"><span class="font-medium">Progreso</span><span class="font-bold text-green-600">${pct.toFixed(0)}%</span></div>
+        <div class="w-full bg-gray-200 h-3 rounded-full"><div class="bg-green-500 h-3 rounded-full" style="width:${pct}%"></div></div>
+        <p class="text-xs text-gray-400 mt-2">Has bajado ${(kgBajados * factor).toFixed(1)} ${u} de ${(calc.kgBajar * factor).toFixed(1)} ${u} necesarios</p>
+      </div>`;
+
+    document.getElementById('fechaInicio').textContent = new Date(c.fechaInicio).toLocaleDateString();
     document.getElementById('modalDetalle').classList.remove('hidden');
-    document.getElementById('pesoAvance').placeholder = `Peso (${u})`;
-    document.getElementById('fechaAvance').value = new Date().toISOString().split('T')[0];
+    actualizarGrafica(c, factor);
+  }
+
+  function actualizarGrafica(c, factor) {
+    if (chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('grafica').getContext('2d');
+    const labels = ["Inicio", ... (c.avances || []).map(a => new Date(a.fecha).toLocaleDateString())];
+    const data = [c.peso * factor, ... (c.avances || []).map(a => a.peso * factor)];
+    
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Peso Real',
+          data: data,
+          borderColor: '#000',
+          backgroundColor: 'rgba(0,0,0,0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
   }
 
   async function agregarAvance() {
-    if(!clienteSeleccionado) return;
     const btn = document.getElementById('btnAvance');
-    let pesoAv = parseFloat(document.getElementById('pesoAvance').value);
-    const grasaAv = parseFloat(document.getElementById('grasaAvance').value);
-    const fechaAv = document.getElementById('fechaAvance').value;
+    let p = parseFloat(document.getElementById('pesoAvance').value);
+    let g = parseFloat(document.getElementById('grasaAvance').value);
+    let f = document.getElementById('fechaAvance').value;
+    if(!p || !g || !f) return alert("Faltan datos");
 
-    if(!pesoAv || !grasaAv || !fechaAv) return alert("Completa todos los campos");
+    btn.disabled = true; btn.textContent = "Guardando...";
+    if (usaLibras) p /= KG_TO_LBS;
 
-    btn.disabled = true;
-    btn.textContent = "Guardando...";
-
-    if (usaLibras) pesoAv = pesoAv / KG_TO_LBS;
-
-    const avance = { id: clienteSeleccionado.id, peso: pesoAv, grasa: grasaAv, fecha: fechaAv };
-
-    try {
-      await fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({ action: "agregarAvance", avance })
-      });
-      alert("✅ Avance guardado.");
-      cerrarDetalle();
-      setTimeout(cargarClientes, 1500);
-    } catch (e) {
-      alert("Error al guardar avance.");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Guardar Avance";
-    }
+    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }})});
+    alert("Avance guardado."); cerrarDetalle(); cargarClientes();
+    btn.disabled = false; btn.textContent = "Guardar Avance";
   }
 
-  function nuevoCliente() {
-    document.getElementById('idPaciente').value = '';
-    document.getElementById('nombre').value = '';
-    document.getElementById('edad').value = '';
-    document.getElementById('altura').value = '';
-    document.getElementById('peso').value = '';
-    document.getElementById('grasa').value = '';
-    const uPeso = usaLibras ? "lbs" : "kg";
-    const uAltura = usaLibras ? "in" : "cm";
-    document.getElementById('peso').placeholder = `Peso (${uPeso})`;
-    document.getElementById('altura').placeholder = `Altura (${uAltura})`;
-    actualizarGrasaIdeal();
-    document.getElementById('modalCliente').classList.remove('hidden');
-  }
-
+  function nuevoCliente() { document.getElementById('modalCliente').classList.remove('hidden'); }
   function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
-  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); clienteSeleccionado = null; }
+  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); }
 
   window.onload = cargarClientes;
 </script>
