@@ -29,6 +29,10 @@
     <div class="flex gap-3 w-full sm:w-auto">
       <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
              class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
+      <button onclick="toggleUnidades()" id="btnUnidades"
+              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
+        Unidades: <span id="unidadActual">kg / cm</span>
+      </button>
     </div>
   </div>
 
@@ -88,14 +92,6 @@
       </div>
     </div>
 
-    <!-- Botón de unidades a nivel cliente -->
-    <div class="flex justify-end mb-4">
-      <button onclick="toggleUnidades()" id="btnUnidadesCliente"
-              class="bg-white border border-gray-300 px-5 py-2 rounded-2xl text-sm font-medium">
-        Unidades: <span id="unidadActualCliente">kg / cm</span>
-      </button>
-    </div>
-
     <div class="mb-8">
       <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
       <div id="graficaContainer" class="border border-gray-200 rounded-3xl p-4 bg-white">
@@ -118,11 +114,18 @@
 
   let clientes = [];
   let chartInstance = null;
-  let usaLibras = false;
+  let usaLibras = false;   // ← Variable para controlar unidades
 
   function actualizarGrasaIdeal() {
     const sexo = document.getElementById('sexo').value;
     document.getElementById('grasaObjetivo').value = sexo === 'M' ? 15 : 22;
+  }
+
+  function toggleUnidades() {
+    usaLibras = !usaLibras;
+    const texto = usaLibras ? "lbs / inches" : "kg / cm";
+    document.getElementById('unidadActual').textContent = texto;
+    alert("Unidades cambiadas a: " + texto + "\n\n(La conversión real de números se agregará después)");
   }
 
   function calcularIdeal(c) {
@@ -133,14 +136,6 @@
     const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
     const kgBajar = Math.max(0, peso - pesoIdeal);
     return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), grasaIdeal };
-  }
-
-  function toggleUnidades() {
-    usaLibras = !usaLibras;
-    const texto = usaLibras ? "lbs / inches" : "kg / cm";
-    document.getElementById('unidadActualCliente').textContent = texto;
-    // Por ahora solo cambia el texto. Más adelante convertiremos los valores si es necesario.
-    alert("Unidades cambiadas a: " + texto + "\n\n(La conversión de valores se implementará después)");
   }
 
   async function cargarClientes() {
