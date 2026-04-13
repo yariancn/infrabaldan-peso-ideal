@@ -29,10 +29,6 @@
     <div class="flex gap-3 w-full sm:w-auto">
       <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
              class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
-      <button onclick="toggleUnidades()" 
-              class="bg-white border border-gray-300 px-5 py-3 rounded-2xl text-sm font-medium">
-        Unidades: <span id="unidadActual">kg / cm</span>
-      </button>
     </div>
   </div>
 
@@ -41,7 +37,6 @@
 
 <!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <!-- ... mismo modal nuevo cliente ... -->
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
     <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
     <div class="space-y-5">
@@ -70,12 +65,19 @@
   </div>
 </div>
 
-<!-- Modal Detalle -->
+<!-- Modal Detalle del Cliente -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
-      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black">×</button>
+      
+      <!-- Botón de unidades dentro del modal -->
+      <button onclick="toggleUnidades()" 
+              class="bg-white border border-gray-300 px-5 py-2 rounded-2xl text-sm font-medium">
+        Unidades: <span id="unidadActual">kg / cm</span>
+      </button>
+      
+      <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black ml-4">×</button>
     </div>
 
     <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
@@ -126,25 +128,23 @@
     usaLibras = !usaLibras;
     document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
 
-    // Si el modal de detalle está abierto, convertimos los números
-    if (!document.getElementById('modalDetalle').classList.contains('hidden')) {
-      const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
-      if (pesoEls.length >= 2) {
-        let pesoActual = parseFloat(pesoEls[0].textContent.replace(/[^0-9.]/g, ''));
-        let pesoIdeal = parseFloat(pesoEls[3].textContent.replace(/[^0-9.]/g, ''));
+    // Convertir números si el modal está abierto
+    const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
+    if (pesoEls.length >= 2) {
+      let pesoActual = parseFloat(pesoEls[0].textContent.replace(/[^0-9.]/g, ''));
+      let pesoIdeal = parseFloat(pesoEls[3].textContent.replace(/[^0-9.]/g, ''));
 
-        if (!isNaN(pesoActual) && !isNaN(pesoIdeal)) {
-          if (usaLibras) {
-            pesoActual = (pesoActual * 2.20462).toFixed(1);
-            pesoIdeal = (pesoIdeal * 2.20462).toFixed(1);
-          } else {
-            pesoActual = (pesoActual / 2.20462).toFixed(1);
-            pesoIdeal = (pesoIdeal / 2.20462).toFixed(1);
-          }
-
-          pesoEls[0].textContent = pesoActual + (usaLibras ? " lbs" : " kg");
-          pesoEls[3].textContent = pesoIdeal + (usaLibras ? " lbs" : " kg");
+      if (!isNaN(pesoActual) && !isNaN(pesoIdeal)) {
+        if (usaLibras) {
+          pesoActual = (pesoActual * 2.20462).toFixed(1);
+          pesoIdeal = (pesoIdeal * 2.20462).toFixed(1);
+        } else {
+          pesoActual = (pesoActual / 2.20462).toFixed(1);
+          pesoIdeal = (pesoIdeal / 2.20462).toFixed(1);
         }
+
+        pesoEls[0].textContent = pesoActual + (usaLibras ? " lbs" : " kg");
+        pesoEls[3].textContent = pesoIdeal + (usaLibras ? " lbs" : " kg");
       }
     }
   }
@@ -159,7 +159,6 @@
     return { pesoIdeal: pesoIdeal.toFixed(1), kgBajar: kgBajar.toFixed(1), grasaIdeal };
   }
 
-  // El resto del código se mantiene igual (cargarClientes, guardarCliente, renderLista, verDetalle, etc.)
   async function cargarClientes() {
     try {
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
@@ -262,53 +261,6 @@
     document.getElementById('semanasTranscurridas').textContent = "0 semanas";
 
     document.getElementById('modalDetalle').classList.remove('hidden');
-
-    setTimeout(() => {
-      const canvas = document.getElementById('grafica');
-      if (chartInstance) chartInstance.destroy();
-
-      const labels = ['Inicio'];
-      const pesosReales = [parseFloat(c.peso)];
-
-      if (c.avances && c.avances.length > 0) {
-        c.avances.forEach(avance => {
-          labels.push(avance.fecha);
-          pesosReales.push(parseFloat(avance.peso));
-        });
-      } else {
-        labels.push('Actual');
-        pesosReales.push(parseFloat(c.peso));
-      }
-
-      chartInstance = new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Peso Real',
-              data: pesosReales,
-              borderColor: '#0ea5e9',
-              tension: 0.3,
-              pointRadius: 5
-            },
-            {
-              label: 'Peso Ideal',
-              data: Array(labels.length).fill(parseFloat(calc.pesoIdeal)),
-              borderColor: '#10b981',
-              borderDash: [5, 5],
-              pointRadius: 0
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { beginAtZero: false } },
-          plugins: { legend: { position: 'top' } }
-        }
-      });
-    }, 100);
   }
 
   function nuevoCliente() {
