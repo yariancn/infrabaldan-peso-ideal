@@ -44,6 +44,7 @@
     <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
     
     <div class="space-y-5">
+      <input id="idPaciente" placeholder="ID del Paciente (Manual)" class="w-full px-4 py-3 border border-blue-200 rounded-2xl text-lg font-bold bg-blue-50">
       <input id="nombre" placeholder="Nombre completo" class="w-full px-4 py-3 border rounded-2xl text-lg">
       <div class="grid grid-cols-2 gap-4">
         <select id="sexo" onchange="actualizarGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
@@ -102,7 +103,7 @@
       <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
       <input id="pesoAvance" type="number" step="0.1" placeholder="Peso" class="px-4 py-3 border rounded-2xl">
       <input id="grasaAvance" type="number" step="0.1" placeholder="% Grasa" class="px-4 py-3 border rounded-2xl">
-      <button onclick="agregarAvance()" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
+      <button onclick="agregarAvance()" id="btnAvance" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Guardar Avance</button>
     </div>
   </div>
 </div>
@@ -121,14 +122,10 @@
     usaLibras = !usaLibras;
     const uPeso = usaLibras ? "lbs" : "kg";
     const uAltura = usaLibras ? "in" : "cm";
-    
     document.getElementById('unidadGlobalText').textContent = `${uPeso} / ${uAltura}`;
-    
-    // Actualizar placeholders en formularios
     document.getElementById('peso').placeholder = `Peso (${uPeso})`;
     document.getElementById('altura').placeholder = `Altura (${uAltura})`;
     document.getElementById('pesoAvance').placeholder = `Peso (${uPeso})`;
-    
     if (clienteSeleccionado) verDetalle(clienteSeleccionado);
   }
 
@@ -156,6 +153,9 @@
   }
 
   async function guardarCliente() {
+    const idManual = document.getElementById('idPaciente').value.trim();
+    if(!idManual) return alert("Por favor asigna un ID al paciente.");
+
     const btn = document.getElementById('btnGuardar');
     btn.disabled = true;
     btn.textContent = "Guardando...";
@@ -169,6 +169,7 @@
     }
 
     const cliente = {
+      id: idManual,
       nombre: document.getElementById('nombre').value.trim() || 'Sin nombre',
       sexo: document.getElementById('sexo').value,
       edad: parseFloat(document.getElementById('edad').value) || 30,
@@ -186,7 +187,7 @@
         mode: 'no-cors',
         body: JSON.stringify({ action: "guardarCliente", cliente })
       });
-      alert("✅ Solicitud de guardado enviada.");
+      alert("✅ Cliente enviado correctamente.");
       cerrarModal();
       setTimeout(cargarClientes, 1500);
     } catch (e) {
@@ -201,12 +202,12 @@
     const container = document.getElementById('listaClientes');
     container.innerHTML = '';
     const term = document.getElementById('buscar').value.toLowerCase();
-
     clientes.forEach((c) => {
       if (c.nombre.toLowerCase().includes(term)) {
         const card = document.createElement('div');
         card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
         card.innerHTML = `
+          <div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div>
           <div class="font-semibold text-xl mb-1">${c.nombre}</div>
           <div class="text-gray-500 text-sm">${c.sexo === 'M' ? 'Hombre' : 'Mujer'} • ${c.edad} años</div>
         `;
@@ -220,16 +221,10 @@
     clienteSeleccionado = c;
     document.getElementById('nombreDetalle').textContent = c.nombre;
     const calc = calcularIdeal(c);
-
     let pActual = c.peso;
     let pIdeal = calc.pesoIdeal;
     let u = "kg";
-
-    if (usaLibras) {
-      pActual = pActual * KG_TO_LBS;
-      pIdeal = pIdeal * KG_TO_LBS;
-      u = "lbs";
-    }
+    if (usaLibras) { pActual *= KG_TO_LBS; pIdeal *= KG_TO_LBS; u = "lbs"; }
 
     document.getElementById('resumenCalculo').innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
@@ -240,57 +235,62 @@
       </div>
     `;
 
-    const kgBajados = 0; 
-    const porcentaje = calc.kgBajar > 0 ? Math.min(100, (kgBajados / calc.kgBajar) * 100) : 100;
-
-    document.getElementById('progresoContainer').innerHTML = `
-      <div class="bg-white border border-gray-200 rounded-3xl p-6">
-        <div class="flex justify-between items-center mb-3">
-          <span class="font-medium">Progreso hacia el objetivo</span>
-          <span class="text-2xl font-bold text-green-600">${porcentaje.toFixed(0)}%</span>
-        </div>
-        <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-          <div class="h-3 bg-green-500 rounded-full" style="width: ${porcentaje}%"></div>
-        </div>
-        <div class="text-xs text-gray-500 mt-2">
-          Objetivo: bajar ${usaLibras ? (calc.kgBajar * KG_TO_LBS).toFixed(1) : calc.kgBajar} ${u}
-        </div>
-      </div>
-    `;
-
     document.getElementById('fechaInicio').textContent = c.fechaInicio || "---";
     document.getElementById('modalDetalle').classList.remove('hidden');
     document.getElementById('pesoAvance').placeholder = `Peso (${u})`;
+    document.getElementById('fechaAvance').value = new Date().toISOString().split('T')[0];
   }
 
-  function agregarAvance() {
+  async function agregarAvance() {
     if(!clienteSeleccionado) return;
-    let pesoAvance = parseFloat(document.getElementById('pesoAvance').value);
-    if (usaLibras) pesoAvance = pesoAvance / KG_TO_LBS;
-    alert(`Dato normalizado: ${pesoAvance.toFixed(2)} kg. Listo para guardar.`);
+    const btn = document.getElementById('btnAvance');
+    let pesoAv = parseFloat(document.getElementById('pesoAvance').value);
+    const grasaAv = parseFloat(document.getElementById('grasaAvance').value);
+    const fechaAv = document.getElementById('fechaAvance').value;
+
+    if(!pesoAv || !grasaAv || !fechaAv) return alert("Completa todos los campos");
+
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+
+    if (usaLibras) pesoAv = pesoAv / KG_TO_LBS;
+
+    const avance = { id: clienteSeleccionado.id, peso: pesoAv, grasa: grasaAv, fecha: fechaAv };
+
+    try {
+      await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: "agregarAvance", avance })
+      });
+      alert("✅ Avance guardado.");
+      cerrarDetalle();
+      setTimeout(cargarClientes, 1500);
+    } catch (e) {
+      alert("Error al guardar avance.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Guardar Avance";
+    }
   }
 
   function nuevoCliente() {
+    document.getElementById('idPaciente').value = '';
     document.getElementById('nombre').value = '';
     document.getElementById('edad').value = '';
     document.getElementById('altura').value = '';
     document.getElementById('peso').value = '';
     document.getElementById('grasa').value = '';
-    
     const uPeso = usaLibras ? "lbs" : "kg";
     const uAltura = usaLibras ? "in" : "cm";
     document.getElementById('peso').placeholder = `Peso (${uPeso})`;
     document.getElementById('altura').placeholder = `Altura (${uAltura})`;
-
     actualizarGrasaIdeal();
     document.getElementById('modalCliente').classList.remove('hidden');
   }
 
   function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
-  function cerrarDetalle() { 
-    document.getElementById('modalDetalle').classList.add('hidden'); 
-    clienteSeleccionado = null;
-  }
+  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); clienteSeleccionado = null; }
 
   window.onload = cargarClientes;
 </script>
