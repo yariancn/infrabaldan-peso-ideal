@@ -114,7 +114,7 @@
 
   let clientes = [];
   let chartInstance = null;
-  let usaLibras = false;   // ← Variable para controlar unidades
+  let usaLibras = false;
 
   function actualizarGrasaIdeal() {
     const sexo = document.getElementById('sexo').value;
@@ -125,7 +125,19 @@
     usaLibras = !usaLibras;
     const texto = usaLibras ? "lbs / inches" : "kg / cm";
     document.getElementById('unidadActual').textContent = texto;
-    alert("Unidades cambiadas a: " + texto + "\n\n(La conversión real de números se agregará después)");
+
+    // Actualizamos los valores mostrados en el modal si está abierto
+    const modal = document.getElementById('modalDetalle');
+    if (modal.classList.contains('hidden')) return;
+
+    // Aquí convertimos los números visibles en el modal
+    const pesoActualEl = document.querySelector('#resumenCalculo .text-3xl.font-bold');
+    if (pesoActualEl) {
+      let peso = parseFloat(pesoActualEl.textContent);
+      if (usaLibras) peso = peso * 2.20462;
+      else peso = peso / 2.20462;
+      pesoActualEl.textContent = peso.toFixed(1) + (usaLibras ? " lbs" : " kg");
+    }
   }
 
   function calcularIdeal(c) {
