@@ -96,7 +96,9 @@
 </div>
 
 <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQ6yAV6-pt_op2TiwAFTbPM5EKYNT_6ZDLfR9oHov42ROk9ntQqIVPTfN09ski0PTe/exec";
+  // URL actualizada según tu última implementación
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfTBe73GaXzem3p08rDd6N5ebXgBt2EROVx6HbrMrPATX2a8bbkoPiV1PhyifbjUU6/exec";
+  
   let clientes = [];
   let clienteSeleccionado = null;
   let usaLibras = false;
@@ -132,7 +134,7 @@
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
       clientes = await res.json();
       renderLista();
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Error cargando clientes:", e); }
   }
 
   async function guardarCliente() {
@@ -152,9 +154,13 @@
       fechaInicio: new Date().toISOString()
     };
 
-    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
-    alert("Cliente guardado."); cerrarModal(); cargarClientes();
-    btn.disabled = false; btn.textContent = "Guardar Cliente";
+    try {
+      await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
+      alert("Cliente guardado correctamente."); 
+      cerrarModal(); 
+      setTimeout(cargarClientes, 1000);
+    } catch (e) { alert("Error al guardar."); }
+    finally { btn.disabled = false; btn.textContent = "Guardar Cliente"; }
   }
 
   function renderLista() {
@@ -178,7 +184,6 @@
     const u = usaLibras ? "lbs" : "kg";
     const factor = usaLibras ? KG_TO_LBS : 1;
 
-    // Lógica de Avances y Gráfica
     const listaAvances = c.avances || [];
     const ultimoPeso = listaAvances.length > 0 ? listaAvances[listaAvances.length - 1].peso : c.peso;
     const kgBajados = Math.max(0, c.peso - ultimoPeso);
@@ -201,6 +206,7 @@
       </div>`;
 
     document.getElementById('fechaInicio').textContent = new Date(c.fechaInicio).toLocaleDateString();
+    document.getElementById('fechaAvance').value = new Date().toISOString().split('T')[0];
     document.getElementById('modalDetalle').classList.remove('hidden');
     actualizarGrafica(c, factor);
   }
@@ -216,10 +222,10 @@
       data: {
         labels: labels,
         datasets: [{
-          label: 'Peso Real',
+          label: 'Evolución de Peso',
           data: data,
           borderColor: '#000',
-          backgroundColor: 'rgba(0,0,0,0.1)',
+          backgroundColor: 'rgba(0,0,0,0.05)',
           fill: true,
           tension: 0.3
         }]
@@ -238,9 +244,16 @@
     btn.disabled = true; btn.textContent = "Guardando...";
     if (usaLibras) p /= KG_TO_LBS;
 
-    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }})});
-    alert("Avance guardado."); cerrarDetalle(); cargarClientes();
-    btn.disabled = false; btn.textContent = "Guardar Avance";
+    try {
+      await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ 
+        action: "agregarAvance", 
+        avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }
+      })});
+      alert("Avance guardado con éxito."); 
+      cerrarDetalle(); 
+      setTimeout(cargarClientes, 1000);
+    } catch (e) { alert("Error al registrar el avance."); }
+    finally { btn.disabled = false; btn.textContent = "Guardar Avance"; }
   }
 
   function nuevoCliente() { document.getElementById('modalCliente').classList.remove('hidden'); }
