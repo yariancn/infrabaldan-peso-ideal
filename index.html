@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
+    body { font-family: system-ui; }
     #graficaContainer { max-height: 220px; position: relative; }
   </style>
 </head>
@@ -14,8 +15,7 @@
 
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col items-center mb-6">
-    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4" 
-         onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
+    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4" onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
     <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
     <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
   </div>
@@ -65,15 +65,15 @@
   </div>
 </div>
 
-<!-- Modal Detalle del Cliente -->
+<!-- Modal Detalle -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
       
-      <!-- Botón de unidades dentro del modal -->
+      <!-- Botón de unidades DENTRO del modal -->
       <button onclick="toggleUnidades()" 
-              class="bg-white border border-gray-300 px-5 py-2 rounded-2xl text-sm font-medium">
+              class="bg-white border border-gray-300 px-6 py-3 rounded-2xl text-sm font-medium">
         Unidades: <span id="unidadActual">kg / cm</span>
       </button>
       
@@ -128,7 +128,6 @@
     usaLibras = !usaLibras;
     document.getElementById('unidadActual').textContent = usaLibras ? "lbs / inches" : "kg / cm";
 
-    // Convertir números si el modal está abierto
     const pesoEls = document.querySelectorAll('#resumenCalculo .text-3xl.font-bold');
     if (pesoEls.length >= 2) {
       let pesoActual = parseFloat(pesoEls[0].textContent.replace(/[^0-9.]/g, ''));
@@ -142,7 +141,6 @@
           pesoActual = (pesoActual / 2.20462).toFixed(1);
           pesoIdeal = (pesoIdeal / 2.20462).toFixed(1);
         }
-
         pesoEls[0].textContent = pesoActual + (usaLibras ? " lbs" : " kg");
         pesoEls[3].textContent = pesoIdeal + (usaLibras ? " lbs" : " kg");
       }
