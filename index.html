@@ -96,7 +96,6 @@
 </div>
 
 <script>
-  // URL actualizada según tu última implementación
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfTBe73GaXzem3p08rDd6N5ebXgBt2EROVx6HbrMrPATX2a8bbkoPiV1PhyifbjUU6/exec";
   
   let clientes = [];
@@ -109,10 +108,19 @@
 
   function toggleUnidadesGlobal() {
     usaLibras = !usaLibras;
+    actualizarTextosUnidades();
+    if (clienteSeleccionado) verDetalle(clienteSeleccionado);
+  }
+
+  function actualizarTextosUnidades() {
     const uP = usaLibras ? "lbs" : "kg";
     const uA = usaLibras ? "in" : "cm";
     document.getElementById('unidadGlobalText').textContent = `${uP} / ${uA}`;
-    if (clienteSeleccionado) verDetalle(clienteSeleccionado);
+    
+    // Actualizar placeholders de todos los formularios abiertos o cerrados
+    document.getElementById('peso').placeholder = `Peso (${uP})`;
+    document.getElementById('altura').placeholder = `Altura (${uA})`;
+    document.getElementById('pesoAvance').placeholder = `Peso (${uP})`;
   }
 
   function actualizarGrasaIdeal() {
@@ -134,7 +142,7 @@
       const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
       clientes = await res.json();
       renderLista();
-    } catch (e) { console.error("Error cargando clientes:", e); }
+    } catch (e) { console.error(e); }
   }
 
   async function guardarCliente() {
@@ -145,6 +153,8 @@
     
     let p = parseFloat(document.getElementById('peso').value) || 0;
     let a = parseFloat(document.getElementById('altura').value) || 170;
+    
+    // Normalización: Guardar siempre en KG y CM
     if (usaLibras) { p /= KG_TO_LBS; a *= CM_TO_IN; }
 
     const cliente = {
@@ -156,9 +166,9 @@
 
     try {
       await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
-      alert("Cliente guardado correctamente."); 
+      alert("Cliente guardado."); 
       cerrarModal(); 
-      setTimeout(cargarClientes, 1000);
+      cargarClientes();
     } catch (e) { alert("Error al guardar."); }
     finally { btn.disabled = false; btn.textContent = "Guardar Cliente"; }
   }
@@ -172,7 +182,10 @@
         const card = document.createElement('div');
         card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
         card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div>`;
-        card.onclick = () => verDetalle(c);
+        card.onclick = (e) => { 
+          // Evitar que el click en el botón de unidades (si estuviera dentro) dispare esto
+          verDetalle(c); 
+        };
         container.appendChild(card);
       }
     });
@@ -206,8 +219,8 @@
       </div>`;
 
     document.getElementById('fechaInicio').textContent = new Date(c.fechaInicio).toLocaleDateString();
-    document.getElementById('fechaAvance').value = new Date().toISOString().split('T')[0];
     document.getElementById('modalDetalle').classList.remove('hidden');
+    actualizarTextosUnidades();
     actualizarGrafica(c, factor);
   }
 
@@ -249,16 +262,27 @@
         action: "agregarAvance", 
         avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }
       })});
-      alert("Avance guardado con éxito."); 
+      alert("Avance guardado."); 
       cerrarDetalle(); 
-      setTimeout(cargarClientes, 1000);
-    } catch (e) { alert("Error al registrar el avance."); }
+      cargarClientes();
+    } catch (e) { alert("Error."); }
     finally { btn.disabled = false; btn.textContent = "Guardar Avance"; }
   }
 
-  function nuevoCliente() { document.getElementById('modalCliente').classList.remove('hidden'); }
+  function nuevoCliente() { 
+    document.getElementById('idPaciente').value = '';
+    document.getElementById('nombre').value = '';
+    document.getElementById('edad').value = '';
+    document.getElementById('altura').value = '';
+    document.getElementById('peso').value = '';
+    document.getElementById('grasa').value = '';
+    actualizarTextosUnidades();
+    actualizarGrasaIdeal();
+    document.getElementById('modalCliente').classList.remove('hidden'); 
+  }
+
   function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
-  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); }
+  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); clienteSeleccionado = null; }
 
   window.onload = cargarClientes;
 </script>
