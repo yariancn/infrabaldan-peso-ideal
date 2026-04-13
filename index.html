@@ -8,14 +8,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     body { font-family: system-ui; }
-    #graficaContainer { height: 220px; position: relative; }
+    #graficaContainer { height: 250px; position: relative; }
   </style>
 </head>
 <body class="bg-gray-50">
 
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col items-center mb-6">
-    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-30 mb-4" onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
+    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-20 mb-4" onerror="this.src='https://via.placeholder.com/200x80/0ea5e9/ffffff?text=OXY';">
     <h1 class="text-4xl font-bold text-center text-black">Infra Baldan</h1>
     <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
   </div>
@@ -75,12 +75,12 @@
         <div class="font-medium" id="fechaInicio"></div>
       </div>
       <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Semanas transcurridas</div>
-        <div class="font-medium" id="semanasTranscurridas"></div>
+        <div class="text-gray-500">Meta estimada</div>
+        <div class="font-medium" id="tiempoMeta"></div>
       </div>
     </div>
     <div class="mb-8">
-      <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución de Peso</h4>
+      <h4 class="text-sm font-medium text-gray-600 mb-3">Evolución vs Objetivo (2 lbs/semana)</h4>
       <div id="graficaContainer" class="border border-gray-200 rounded-3xl p-4 bg-white">
         <canvas id="grafica"></canvas>
       </div>
@@ -97,7 +97,6 @@
 
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfTBe73GaXzem3p08rDd6N5ebXgBt2EROVx6HbrMrPATX2a8bbkoPiV1PhyifbjUU6/exec";
-  
   let clientes = [];
   let clienteSeleccionado = null;
   let usaLibras = false;
@@ -105,22 +104,17 @@
 
   const KG_TO_LBS = 2.20462;
   const CM_TO_IN = 2.54;
+  const BAJA_POR_SEMANA_KG = 0.907; // 2 lbs en kg
 
   function toggleUnidadesGlobal() {
     usaLibras = !usaLibras;
-    actualizarTextosUnidades();
-    if (clienteSeleccionado) verDetalle(clienteSeleccionado);
-  }
-
-  function actualizarTextosUnidades() {
     const uP = usaLibras ? "lbs" : "kg";
     const uA = usaLibras ? "in" : "cm";
     document.getElementById('unidadGlobalText').textContent = `${uP} / ${uA}`;
-    
-    // Actualizar placeholders de todos los formularios abiertos o cerrados
     document.getElementById('peso').placeholder = `Peso (${uP})`;
     document.getElementById('altura').placeholder = `Altura (${uA})`;
     document.getElementById('pesoAvance').placeholder = `Peso (${uP})`;
+    if (clienteSeleccionado) verDetalle(clienteSeleccionado);
   }
 
   function actualizarGrasaIdeal() {
@@ -134,7 +128,9 @@
     const grasaIdeal = parseFloat(c.grasaObjetivo) || (c.sexo === 'M' ? 15 : 22);
     const masaMagra = peso * (1 - grasaActual / 100);
     const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
-    return { pesoIdeal, kgBajar: Math.max(0, peso - pesoIdeal), grasaIdeal };
+    const kgBajar = Math.max(0, peso - pesoIdeal);
+    const semanas = Math.ceil(kgBajar / BAJA_POR_SEMANA_KG);
+    return { pesoIdeal, kgBajar, grasaIdeal, semanas };
   }
 
   async function cargarClientes() {
@@ -150,27 +146,18 @@
     if(!id) return alert("ID requerido");
     const btn = document.getElementById('btnGuardar');
     btn.disabled = true; btn.textContent = "Guardando...";
-    
     let p = parseFloat(document.getElementById('peso').value) || 0;
     let a = parseFloat(document.getElementById('altura').value) || 170;
-    
-    // Normalización: Guardar siempre en KG y CM
     if (usaLibras) { p /= KG_TO_LBS; a *= CM_TO_IN; }
-
     const cliente = {
       id, nombre: document.getElementById('nombre').value, sexo: document.getElementById('sexo').value,
       edad: document.getElementById('edad').value, altura: a, peso: p,
       grasa: document.getElementById('grasa').value, grasaObjetivo: document.getElementById('grasaObjetivo').value,
       fechaInicio: new Date().toISOString()
     };
-
-    try {
-      await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
-      alert("Cliente guardado."); 
-      cerrarModal(); 
-      cargarClientes();
-    } catch (e) { alert("Error al guardar."); }
-    finally { btn.disabled = false; btn.textContent = "Guardar Cliente"; }
+    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
+    alert("Cliente guardado."); cerrarModal(); cargarClientes();
+    btn.disabled = false; btn.textContent = "Guardar Cliente";
   }
 
   function renderLista() {
@@ -181,11 +168,8 @@
       if (c.nombre.toLowerCase().includes(term)) {
         const card = document.createElement('div');
         card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
-        card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div>`;
-        card.onclick = (e) => { 
-          // Evitar que el click en el botón de unidades (si estuviera dentro) dispare esto
-          verDetalle(c); 
-        };
+        card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div><div class="text-gray-500 text-sm">${c.sexo === 'M' ? 'H' : 'M'} • ${c.edad} años</div>`;
+        card.onclick = () => verDetalle(c);
         container.appendChild(card);
       }
     });
@@ -194,8 +178,8 @@
   function verDetalle(c) {
     clienteSeleccionado = c;
     const calc = calcularIdeal(c);
-    const u = usaLibras ? "lbs" : "kg";
     const factor = usaLibras ? KG_TO_LBS : 1;
+    const u = usaLibras ? "lbs" : "kg";
 
     const listaAvances = c.avances || [];
     const ultimoPeso = listaAvances.length > 0 ? listaAvances[listaAvances.length - 1].peso : c.peso;
@@ -215,35 +199,67 @@
       <div class="bg-white border p-6 rounded-3xl">
         <div class="flex justify-between mb-2"><span class="font-medium">Progreso</span><span class="font-bold text-green-600">${pct.toFixed(0)}%</span></div>
         <div class="w-full bg-gray-200 h-3 rounded-full"><div class="bg-green-500 h-3 rounded-full" style="width:${pct}%"></div></div>
-        <p class="text-xs text-gray-400 mt-2">Has bajado ${(kgBajados * factor).toFixed(1)} ${u} de ${(calc.kgBajar * factor).toFixed(1)} ${u} necesarios</p>
+        <p class="text-xs text-gray-400 mt-2">Faltan ${( (calc.pesoIdeal < ultimoPeso ? ultimoPeso - calc.pesoIdeal : 0) * factor).toFixed(1)} ${u} para la meta.</p>
       </div>`;
 
     document.getElementById('fechaInicio').textContent = new Date(c.fechaInicio).toLocaleDateString();
+    document.getElementById('tiempoMeta').textContent = `${calc.semanas} semanas (aprox)`;
     document.getElementById('modalDetalle').classList.remove('hidden');
-    actualizarTextosUnidades();
-    actualizarGrafica(c, factor);
+    actualizarGrafica(c, factor, calc.pesoIdeal);
   }
 
-  function actualizarGrafica(c, factor) {
+  function actualizarGrafica(c, factor, pesoIdeal) {
     if (chartInstance) chartInstance.destroy();
     const ctx = document.getElementById('grafica').getContext('2d');
-    const labels = ["Inicio", ... (c.avances || []).map(a => new Date(a.fecha).toLocaleDateString())];
-    const data = [c.peso * factor, ... (c.avances || []).map(a => a.peso * factor)];
     
+    const labels = ["Inicio"];
+    const dataReal = [c.peso * factor];
+    const dataObjetivo = [c.peso * factor];
+    
+    // Datos reales
+    if(c.avances) {
+      c.avances.forEach((a, i) => {
+        labels.push("Sem " + (i+1));
+        dataReal.push(a.peso * factor);
+      });
+    }
+
+    // Proyección Objetivo (2 lbs por semana)
+    let pesoProyectado = c.peso;
+    for(let i = 1; i <= 12; i++) { // Proyectamos 12 semanas
+      if (labels.length <= i) labels.push("Sem " + i);
+      pesoProyectado -= BAJA_POR_SEMANA_KG;
+      if (pesoProyectado < pesoIdeal) pesoProyectado = pesoIdeal;
+      dataObjetivo.push(pesoProyectado * factor);
+    }
+
     chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels: labels,
-        datasets: [{
-          label: 'Evolución de Peso',
-          data: data,
-          borderColor: '#000',
-          backgroundColor: 'rgba(0,0,0,0.05)',
-          fill: true,
-          tension: 0.3
-        }]
+        datasets: [
+          {
+            label: 'Peso Real',
+            data: dataReal,
+            borderColor: '#000',
+            borderWidth: 3,
+            fill: false
+          },
+          {
+            label: 'Trayectoria Ideal (2lbs/sem)',
+            data: dataObjetivo,
+            borderColor: '#3b82f6',
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+          }
+        ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: false } }
+      }
     });
   }
 
@@ -253,37 +269,16 @@
     let g = parseFloat(document.getElementById('grasaAvance').value);
     let f = document.getElementById('fechaAvance').value;
     if(!p || !g || !f) return alert("Faltan datos");
-
     btn.disabled = true; btn.textContent = "Guardando...";
     if (usaLibras) p /= KG_TO_LBS;
-
-    try {
-      await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ 
-        action: "agregarAvance", 
-        avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }
-      })});
-      alert("Avance guardado."); 
-      cerrarDetalle(); 
-      cargarClientes();
-    } catch (e) { alert("Error."); }
-    finally { btn.disabled = false; btn.textContent = "Guardar Avance"; }
+    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }})});
+    alert("Avance guardado."); cerrarDetalle(); cargarClientes();
+    btn.disabled = false; btn.textContent = "Guardar Avance";
   }
 
-  function nuevoCliente() { 
-    document.getElementById('idPaciente').value = '';
-    document.getElementById('nombre').value = '';
-    document.getElementById('edad').value = '';
-    document.getElementById('altura').value = '';
-    document.getElementById('peso').value = '';
-    document.getElementById('grasa').value = '';
-    actualizarTextosUnidades();
-    actualizarGrasaIdeal();
-    document.getElementById('modalCliente').classList.remove('hidden'); 
-  }
-
+  function nuevoCliente() { document.getElementById('modalCliente').classList.remove('hidden'); }
   function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
   function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); clienteSeleccionado = null; }
-
   window.onload = cargarClientes;
 </script>
 </body>
