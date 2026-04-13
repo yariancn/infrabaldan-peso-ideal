@@ -20,25 +20,23 @@
     <p class="text-gray-500">Seguimiento de Peso y Composición Corporal</p>
   </div>
 
-  <!-- Explicación científica -->
-  <div class="max-w-2xl mx-auto mb-8 bg-blue-50 border border-blue-200 rounded-3xl p-5 text-sm text-blue-800 text-center">
-    <strong>Método utilizado:</strong> Cálculo basado en Masa Magra + Porcentaje de Grasa Objetivo.<br>
-    Este es el método más preciso y científico cuando se dispone de % de grasa corporal.
-  </div>
-
-  <div class="flex justify-between items-start mb-8">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
     <button onclick="nuevoCliente()" 
             class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
       <span>+</span> Nuevo Cliente
     </button>
 
-    <!-- Botón de unidades eliminado -->
+    <div class="flex gap-3 w-full sm:w-auto">
+      <input id="buscar" type="text" placeholder="Buscar cliente..." onkeyup="renderLista()" 
+             class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
+      <!-- Botón de unidades eliminado, solo queda el de búsqueda -->
+    </div>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
 </div>
 
-<!-- Modal Nuevo Cliente (sin cambios) -->
+<!-- Modal Nuevo Cliente -->
 <div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
     <h2 class="text-2xl font-bold mb-6">Nuevo Cliente</h2>
@@ -68,7 +66,7 @@
   </div>
 </div>
 
-<!-- Modal Detalle (sin cambios) -->
+<!-- Modal Detalle -->
 <div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
     <div class="flex justify-between items-center mb-6">
