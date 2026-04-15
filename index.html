@@ -1,14 +1,14 @@
 <div class="flex flex-col items-center mb-12">
   <img src="logo.jpg" alt="Oxy Hyperbaric" 
        style="height: 120px !important; width: auto !important; min-height: 120px !important; display: block;" 
-       class="mb-6 object-contain" 
+       class="mb-6 object-contain" 
        onerror="this.src='https://via.placeholder.com/400x120/000000/ffffff?text=OXY+HYPERBARIC';">
   <h1 class="text-4xl font-black text-center text-black tracking-tighter uppercase italic">PredictaCore Titán</h1>
   <div class="h-1.5 w-24 bg-blue-600 mt-2"></div>
 </div>
 
 <div class="flex justify-end mb-4 px-4">
-  <button onclick="toggleUnits(event)" id="unitToggle" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition-all border-2 border-gray-200 focus:outline-none">
+  <button onclick="toggleUnits(event)" id="unitToggle" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition-all border-2 border-gray-200">
     Unidades: <span id="currentUnitText" class="text-blue-600">KG</span>
   </button>
 </div>
@@ -43,41 +43,32 @@
 </div>
 
 <script>
-// --- LÓGICA DE CONTROL ---
-let unitMode = 'KG';
+// --- AJUSTES EN EL SCRIPT PARA QUE FUNCIONE TODO ---
 
+// 1. Evitar que el clic en unidades abra clientes
 function toggleUnits(event) {
-    // CRÍTICO: Esto detiene el clic para que NO se abra el cliente
     if (event) {
         event.preventDefault();
-        event.stopPropagation();
+        event.stopPropagation(); // ESTO ARREGLA QUE NO ABRA EL PRIMER CLIENTE
     }
     
+    // Aquí pon tu lógica actual de cambio de unidades
     unitMode = (unitMode === 'KG') ? 'LB' : 'KG';
     document.getElementById('currentUnitText').innerText = unitMode;
-    console.log("Modo cambiado a:", unitMode);
+    
+    // Si tienes una función para refrescar la tabla al cambiar unidades, llámala aquí:
+    // renderTable(); 
 }
 
-// --- FUNCIÓN PARA GUARDAR NUEVO CLIENTE (CON CONVERSIÓN) ---
-function guardarNuevoCliente(datos) {
-    let pesoFinal = parseFloat(datos.peso);
-
-    // Si el usuario ingresó el dato en Libras, lo convertimos a KG para la base de datos
+// 2. Conversión para clientes nuevos (Agrégalo a tu función de guardado)
+function saveClient() {
+    let pesoInput = parseFloat(document.getElementById('newWeight').value);
+    
+    // Si el botón dice LB, convertimos antes de enviar a Google Sheets
     if (unitMode === 'LB') {
-        pesoFinal = pesoFinal / 2.20462;
-        console.log("Conversión aplicada: de LB a KG");
+        pesoInput = pesoInput / 2.20462;
     }
 
-    const payload = {
-        nombre: datos.nombre,
-        peso: pesoFinal.toFixed(2), // Siempre guardamos en KG
-        altura: datos.altura,
-        edad: datos.edad,
-        sexo: datos.sexo
-    };
-
-    // Aquí envías el payload a Google Apps Script
-    // google.script.run.addNewClient(payload);
-    console.log("Guardando en base de datos (siempre en KG):", payload);
+    // Ahora envías pesoInput a la base de datos...
 }
 </script>
