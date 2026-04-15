@@ -1,19 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictaCore Titán</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Forzado de logo para que respete el tamaño 4x (120px) */
+        .main-logo { height: 120px !important; width: auto !important; min-height: 120px !important; display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+
 <div class="flex flex-col items-center mb-12">
   <img src="logo.jpg" alt="Oxy Hyperbaric" 
-       style="height: 120px !important; width: auto !important; min-height: 120px !important; display: block;" 
-       class="mb-6 object-contain" 
+       class="main-logo mb-6 object-contain" 
        onerror="this.src='https://via.placeholder.com/400x120/000000/ffffff?text=OXY+HYPERBARIC';">
   <h1 class="text-4xl font-black text-center text-black tracking-tighter uppercase italic">PredictaCore Titán</h1>
   <div class="h-1.5 w-24 bg-blue-600 mt-2"></div>
 </div>
 
-<div class="flex justify-end mb-4 px-4">
-  <button onclick="toggleUnits(event)" id="unitToggle" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition-all border-2 border-gray-200">
+<div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-6 mb-8 border border-gray-100">
+    <h2 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4">Registro de Paciente</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <input type="text" id="newName" placeholder="Nombre" class="bg-gray-50 p-3 rounded-xl border-none ring-1 ring-gray-200">
+        <input type="number" id="newWeight" placeholder="Peso" class="bg-gray-50 p-3 rounded-xl border-none ring-1 ring-gray-200">
+        <input type="number" id="newHeight" placeholder="Altura (cm)" class="bg-gray-50 p-3 rounded-xl border-none ring-1 ring-gray-200">
+        <button onclick="saveNewClient()" class="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all">GUARDAR</button>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto flex justify-end mb-4 px-4">
+  <button onclick="toggleUnits(event)" id="unitToggle" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition-all border-2 border-gray-200 focus:outline-none">
     Unidades: <span id="currentUnitText" class="text-blue-600">KG</span>
   </button>
 </div>
 
-<div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+<div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
   <table class="w-full text-left">
     <thead class="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-widest text-gray-400">
       <tr>
@@ -23,52 +46,64 @@
       </tr>
     </thead>
     <tbody id="clientTableBody">
-      </tbody>
+        </tbody>
   </table>
 </div>
 
-<div id="referencePanel" class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-b border-gray-100 py-6 my-8 bg-gray-50/50 rounded-xl">
-    <div class="text-center">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Target Fat %</p>
-        <div id="refFatRange" class="text-lg font-black text-gray-800">18% - 24%</div>
-    </div>
-    <div class="text-center border-l border-r border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Optimal FFMI</p>
-        <div id="refFFMIRange" class="text-lg font-black text-gray-800">19.5 - 21.0</div>
-    </div>
-    <div class="text-center">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metabolic Age</p>
-        <div id="metabolicAgeStatus" class="text-lg font-black text-blue-600">Optimal</div>
+<div class="max-w-4xl mx-auto">
+    <div id="referencePanel" class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-b border-gray-100 py-6 my-8 bg-gray-50/50 rounded-xl">
+        <div class="text-center">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Target Fat %</p>
+            <div id="refFatRange" class="text-lg font-black text-gray-800">18% - 24%</div>
+        </div>
+        <div class="text-center border-l border-r border-gray-100">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Optimal FFMI</p>
+            <div id="refFFMIRange" class="text-lg font-black text-gray-800">19.5 - 21.0</div>
+        </div>
+        <div class="text-center">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metabolic Age</p>
+            <div id="metabolicAgeStatus" class="text-lg font-black text-blue-600">Optimal</div>
+        </div>
     </div>
 </div>
 
 <script>
-// --- AJUSTES EN EL SCRIPT PARA QUE FUNCIONE TODO ---
+let unitMode = 'KG';
 
-// 1. Evitar que el clic en unidades abra clientes
+// ARREGLO: Detener propagación para no abrir clientes accidentalmente
 function toggleUnits(event) {
     if (event) {
         event.preventDefault();
-        event.stopPropagation(); // ESTO ARREGLA QUE NO ABRA EL PRIMER CLIENTE
+        event.stopPropagation();
     }
-    
-    // Aquí pon tu lógica actual de cambio de unidades
     unitMode = (unitMode === 'KG') ? 'LB' : 'KG';
     document.getElementById('currentUnitText').innerText = unitMode;
-    
-    // Si tienes una función para refrescar la tabla al cambiar unidades, llámala aquí:
-    // renderTable(); 
+    console.log("Cambiando unidades a:", unitMode);
 }
 
-// 2. Conversión para clientes nuevos (Agrégalo a tu función de guardado)
-function saveClient() {
-    let pesoInput = parseFloat(document.getElementById('newWeight').value);
-    
-    // Si el botón dice LB, convertimos antes de enviar a Google Sheets
+// ARREGLO: Conversión para clientes nuevos
+function saveNewClient() {
+    const nombre = document.getElementById('newName').value;
+    let peso = parseFloat(document.getElementById('newWeight').value);
+    const altura = document.getElementById('newHeight').value;
+
+    if (!nombre || isNaN(peso)) return alert("Nombre y peso son requeridos");
+
+    // Si está en libras, convertimos a kilos antes de mandar a la DB
     if (unitMode === 'LB') {
-        pesoInput = pesoInput / 2.20462;
+        peso = peso / 2.20462;
     }
 
-    // Ahora envías pesoInput a la base de datos...
+    const payload = { nombre, peso: peso.toFixed(2), altura };
+    console.log("Enviando a Google Sheets (en KG):", payload);
+    
+    // Aquí tu llamada real: google.script.run.addNewClient(payload);
+    alert("Paciente registrado correctamente (Normalizado en KG)");
 }
+
+// Para que la tabla no esté vacía en tu prueba, añade filas con este formato:
+// <tr onclick="selectClient(1)">...</tr>
 </script>
+
+</body>
+</html>
