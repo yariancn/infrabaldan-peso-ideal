@@ -115,6 +115,7 @@
     let unitMode = 'KG';
     let currentPatient = null;
     let chartInstance = null;
+    let globalData = []; // Para manejar el refresco de unidades
 
     window.onload = fetchData;
 
@@ -122,6 +123,7 @@
         try {
             const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
             const data = await res.json();
+            globalData = data;
             renderTable(data);
         } catch (e) { console.error("Error", e); }
     }
@@ -130,14 +132,17 @@
         const tbody = document.getElementById('clientTableBody');
         tbody.innerHTML = '';
         data.forEach(p => {
-            const pesoDisp = unitMode === 'KG' ? p.peso : (p.peso * 2.20462).toFixed(1);
+            // Conversión real basada en el estado de unitMode
+            const pesoOriginal = parseFloat(p.peso);
+            const pesoDisp = unitMode === 'KG' ? pesoOriginal : (pesoOriginal * 2.20462);
+            
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer transition-all border-b border-gray-50";
             tr.onclick = () => selectPatient(p);
             tr.innerHTML = `
                 <td class="px-10 py-6 font-bold text-gray-900">${p.nombre}</td>
                 <td class="px-10 py-6 text-center text-[10px] text-gray-400 font-black uppercase">${p.sexo} | ${p.edad} AÑOS</td>
-                <td class="px-10 py-6 text-center font-black text-blue-600">${pesoDisp} ${unitMode}</td>
+                <td class="px-10 py-6 text-center font-black text-blue-600">${pesoDisp.toFixed(1)} ${unitMode}</td>
                 <td class="px-10 py-6 text-right text-blue-300">➔</td>
             `;
             tbody.appendChild(tr);
@@ -147,16 +152,22 @@
     function selectPatient(p) {
         currentPatient = p;
         document.getElementById('modalNombre').innerText = p.nombre;
-        document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${p.fechaInicio}`;
         
-        // Lógica PredictaCore (Cálculo Meta)
-        const masaMagra = p.peso * 0.78; // Estimación base antes de Wyze
+        // Formateo de fecha legible
+        let fechaLimpia = "--";
+        if(p.fechaInicio) {
+            const dateObj = new Date(p.fechaInicio);
+            fechaLimpia = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${fechaLimpia}`;
+        
+        const masaMagra = p.peso * 0.78; 
         const bmr = 370 + (21.6 * masaMagra);
-        const targetWeight = (masaMagra / 0.82).toFixed(1); // Meta al 18% grasa
+        const targetWeight = (masaMagra / 0.82).toFixed(1); 
         
         document.getElementById('displayBMR').innerText = Math.round(bmr);
         document.getElementById('targetWeightDisplay').innerText = `${targetWeight} KG`;
-        document.getElementById('visceralFat').innerText = p.grasaVisceral || "9";
+        document.getElementById('visceralFat').innerText = p.grasaVisceral || "--";
         
         initChart(p, targetWeight);
         document.getElementById('modalDetalle').classList.remove('hidden');
@@ -166,22 +177,36 @@
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
 
-        // S1: Punto de partida común
-        const metaData = [p.peso];
-        for(let i=1; i<10; i++) metaData.push((metaData[i-1] - 0.45).toFixed(2));
+        const pesoBase = parseFloat(p.peso);
 
-        const realData = p.avances && p.avances.length > 0 ? p.avances.map(a => a.peso) : [p.peso];
+        // Alineación S1: El primer valor de ambos datasets es idéntico al peso de inicio
+        const metaData = [pesoBase];
+        for(let i=1; i<10; i++) {
+            metaData.push((metaData[i-1] - 0.45).toFixed(2));
+        }
+
+        const realData = p.avances && p.avances.length > 0 
+            ? p.avances.map(a => parseFloat(a.peso)) 
+            : [pesoBase];
 
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'],
                 datasets: [
-                    { label: 'Real', data: realData, borderColor: '#2563eb', tension: 0.4, borderWidth: 4 },
-                    { label: 'Proyección', data: metaData, borderColor: '#e2e8f0', borderDash: [5,5], tension: 0 }
+                    { label: 'Real', data: realData, borderColor: '#2563eb', tension: 0.4, borderWidth: 4, pointRadius: 4 },
+                    { label: 'Proyección', data: metaData, borderColor: '#e2e8f0', borderDash: [5,5], tension: 0, pointRadius: 0 }
                 ]
             },
-            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
+            options: { 
+                plugins: { legend: { display: false } }, 
+                scales: { 
+                    y: { 
+                        beginAtZero: false,
+                        ticks: { font: { weight: 'bold' } }
+                    } 
+                } 
+            }
         });
     }
 
@@ -194,7 +219,7 @@
         const cliente = {
             id: Date.now(), nombre, sexo: document.getElementById('newGender').value,
             edad: document.getElementById('newAge').value, peso: pKG.toFixed(2),
-            altura: 170, grasa: 25, grasaObjetivo: 18, fechaInicio: new Date().toLocaleDateString()
+            altura: 170, grasa: 25, grasaObjetivo: 18, fechaInicio: new Date().toISOString()
         };
 
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
@@ -202,14 +227,35 @@
     }
 
     function toggleUnits(e) {
-        if(e) e.stopPropagation();
+        if(e) { e.preventDefault(); e.stopPropagation(); }
         unitMode = unitMode === 'KG' ? 'LB' : 'KG';
         document.getElementById('currentUnitText').innerText = unitMode;
-        renderTable(currentData); // Asumiendo que guardamos los datos en una variable global
+        renderTable(globalData); // Refresca la tabla con la nueva unidad
     }
 
     function closeModal() { document.getElementById('modalDetalle').classList.add('hidden'); }
-    function filterTable() { /* Lógica de filtrado */ }
+    function filterTable() { 
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#clientTableBody tr');
+        rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none');
+    }
+    
+    async function addSession() {
+        const peso = parseFloat(document.getElementById('sessWeight').value);
+        if(!peso || !currentPatient) return;
+        
+        let pKG = unitMode === 'LB' ? peso / 2.20462 : peso;
+        const avance = {
+            id: currentPatient.id,
+            fecha: new Date().toISOString(),
+            peso: pKG.toFixed(2),
+            grasa: 0
+        };
+        
+        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
+        closeModal();
+        fetchData();
+    }
 </script>
 </body>
 </html>
