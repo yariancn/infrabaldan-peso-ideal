@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictaCore Titán - Master Clinical Board</title>
+    <title>PredictaCore Titán - Clinical Board</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -14,38 +14,40 @@
         .titan-btn:hover { background: #334155; transform: translateY(-1px); }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; width: 100%; outline: none; }
         
-        #modalDetalle { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); }
+        /* CONTROL DE CAPAS */
+        #modalDetalle, #modalNuevo { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 92vw; max-width: 1200px; height: 88vh; margin: 6vh auto; border-radius: 40px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 20px 40px; border-bottom: 1px solid #f1f5f9; }
 
+        /* IMPRESIÓN EN UNA SOLA HOJA */
         @media print {
-            @page { size: auto; margin: 10mm; }
+            @page { size: auto; margin: 5mm; }
             .no-print, .unit-control, button, input { display: none !important; }
             body { background: white !important; padding: 0 !important; }
             #modalDetalle { display: block !important; position: static !important; background: white !important; }
             .modal-content { width: 100% !important; max-width: none !important; margin: 0 !important; height: auto !important; border: none !important; padding: 0 !important; overflow: visible !important; }
             .predicta-card { box-shadow: none !important; border: 1px solid #eee !important; page-break-inside: avoid; border-radius: 15px; }
-            canvas { max-width: 100% !important; height: 320px !important; }
+            canvas { max-width: 100% !important; height: 300px !important; }
         }
     </style>
 </head>
 <body class="antialiased p-4">
 
     <div class="fixed top-6 right-8 z-[110] no-print">
-        <button onclick="toggleUnits(event)" class="bg-blue-600 text-white py-2 px-6 rounded-xl font-black text-[10px] shadow-xl uppercase tracking-widest border-2 border-white hover:bg-blue-700 transition-all">
+        <button onclick="toggleUnits(event)" id="btnUnits" class="bg-blue-600 text-white py-2 px-6 rounded-xl font-black text-[10px] shadow-xl uppercase tracking-widest border-2 border-white hover:bg-blue-700">
             SISTEMA: <span id="currentUnitText">KG / CM</span>
         </button>
     </div>
 
     <header class="flex flex-col items-center mb-6 no-print">
-        <div class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-right w-full max-w-6xl">Versión: 15 Abr 2026 - 02:30 PM (Single Page Print Fix)</div>
+        <div class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-right w-full max-w-6xl">Versión: 15 Abr 2026 - 02:45 PM (Fix Raíz)</div>
         <h1 class="text-3xl font-black tracking-tighter uppercase italic text-center">PredictaCore Titán</h1>
         <div class="h-1 w-20 bg-blue-600 mt-2"></div>
     </header>
 
     <main class="max-w-6xl mx-auto no-print">
-        <div class="flex justify-between items-center mb-6">
-            <button onclick="openNewClientModal()" class="titan-btn px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg">+ NUEVO REGISTRO</button>
+        <div class="flex justify-between items-center mb-6 px-2">
+            <button onclick="openNewClientModal()" class="titan-btn px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg">+ NUEVO PACIENTE</button>
             <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar por nombre..." class="bg-white border-none rounded-xl px-4 py-3 text-sm w-80 shadow-sm ring-1 ring-gray-100">
         </div>
 
@@ -65,12 +67,29 @@
         </div>
     </main>
 
+    <div id="modalNuevo">
+        <div class="modal-content max-w-2xl h-auto p-10 mt-[10vh]">
+            <button onclick="closeNewClientModal()" class="absolute top-6 right-8 text-gray-300 hover:text-black text-2xl font-light">✕</button>
+            <h2 class="text-2xl font-black uppercase italic tracking-tighter mb-8 border-l-4 border-blue-600 pl-4">Nuevo Expediente Clínico</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="text" id="newID" class="input-titan" placeholder="ID Manual">
+                <input type="text" id="newName" class="input-titan" placeholder="Nombre Completo">
+                <input type="number" id="newAge" class="input-titan" placeholder="Edad">
+                <input type="number" id="newHeight" class="input-titan" placeholder="Altura">
+                <select id="newGender" class="input-titan font-bold"><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select>
+                <input type="number" id="newWeight" class="input-titan" placeholder="Peso Inicial">
+                <input type="number" id="newFat" class="input-titan" placeholder="% Grasa Actual">
+            </div>
+            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-xl mt-8 uppercase tracking-widest text-xs shadow-xl">Guardar en Base de Datos</button>
+        </div>
+    </div>
+
     <div id="modalDetalle">
         <div class="modal-content">
             <div class="sticky-header flex justify-between items-center no-print">
-                <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:opacity-70">← VOLVER AL LISTADO</button>
+                <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">← VOLVER AL LISTADO</button>
                 <div class="flex gap-3">
-                    <button onclick="window.print()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg">🖨️ IMPRIMIR REPORTE (1 PÁG)</button>
+                    <button onclick="window.print()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg">🖨️ IMPRIMIR REPORTE</button>
                     <button onclick="closeModal()" class="text-gray-300 hover:text-black text-3xl leading-none">✕</button>
                 </div>
             </div>
@@ -92,12 +111,12 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-gray-50 p-6 rounded-[30px] border border-gray-100">
-                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Masa Magra (Músculo)</p>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Masa Magra (Músculo)</p>
                         <p id="muscleMass" class="text-2xl font-black text-slate-800">--</p>
                         <p class="text-[8px] text-gray-400 mt-2 leading-relaxed">Protege tu metabolismo activo y evita el rebote.</p>
                     </div>
                     <div class="bg-gray-50 p-6 rounded-[30px] border border-gray-100 text-center">
-                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic text-center">Grasa Visceral</p>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1 text-center">Grasa Visceral</p>
                         <p id="visceralFat" class="text-2xl font-black text-slate-800">--</p>
                         <p id="visceralStatus" class="text-[9px] font-bold mt-2 uppercase">--</p>
                     </div>
@@ -109,8 +128,8 @@
                 </div>
 
                 <div class="predicta-card p-8 border-2 border-gray-50 mb-8">
-                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4 italic text-center">PROYECCIÓN DE ÉXITO: RUTA HACIA EL PESO SALUDABLE</h3>
-                    <div class="h-[320px] w-full">
+                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4 italic text-center">RUTA HACIA EL PESO SALUDABLE (PRONÓSTICO vs REAL)</h3>
+                    <div class="h-[300px] w-full">
                         <canvas id="progressChart"></canvas>
                     </div>
                 </div>
@@ -159,7 +178,11 @@
         data.forEach(p => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer transition-all border-b border-gray-100 group";
-            tr.onclick = () => selectPatient(p);
+            tr.onclick = (e) => { 
+                // DETECCIÓN DE ELEMENTOS DE CONTROL PARA EVITAR APERTURA ACCIDENTAL
+                if(e.target.closest('button') || e.target.id === 'btnUnits') return;
+                selectPatient(p); 
+            };
             tr.innerHTML = `
                 <td class="px-6 py-4 text-[9px] font-black text-gray-300 uppercase italic">${p.id}</td>
                 <td class="px-6 py-4 font-black text-gray-900 group-hover:text-blue-600 uppercase italic">${p.nombre}</td>
@@ -180,7 +203,6 @@
         const pesoKG = parseFloat(p.peso);
         const grasaActual = parseFloat(p.grasa) / 100;
         const masaMagra = pesoKG * (1 - grasaActual);
-        
         const grasaObjetivo = (p.grasaObjetivo && p.grasaObjetivo > 0) ? (p.grasaObjetivo/100) : 0.15;
         const targetWeightKG = masaMagra / (1 - grasaObjetivo);
         const deficitKG = pesoKG - targetWeightKG;
@@ -193,11 +215,17 @@
         document.getElementById('muscleMass').innerText = `${convP(masaMagra)} ${unitMode}`;
         document.getElementById('displayBMR').innerText = Math.round(370 + (21.6 * masaMagra));
         
-        const gv = p.grasaVisceral || 9;
+        // CORRECCIÓN DEL "9" PLACEHOLDER: Mostrar -- si no hay dato
+        const gv = p.grasaVisceral || "--";
         document.getElementById('visceralFat').innerText = gv;
         const gvS = document.getElementById('visceralStatus');
-        gvS.innerText = gv < 10 ? "ÓPTIMO" : "ALERTA";
-        gvS.className = gv < 10 ? "text-[9px] font-bold mt-2 uppercase text-green-500" : "text-[9px] font-bold mt-2 uppercase text-red-500";
+        if (gv === "--") {
+            gvS.innerText = "PENDIENTE";
+            gvS.className = "text-[9px] font-bold mt-2 uppercase text-gray-400";
+        } else {
+            gvS.innerText = gv < 10 ? "ÓPTIMO" : "ALERTA";
+            gvS.className = gv < 10 ? "text-[9px] font-bold mt-2 uppercase text-green-500" : "text-[9px] font-bold mt-2 uppercase text-red-500";
+        }
 
         initChart(p, targetWeightKG);
         document.getElementById('modalDetalle').style.display = 'block';
@@ -207,11 +235,9 @@
     function initChart(p, targetKG) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-        
         const pIni = parseFloat(p.peso);
         const startPoint = parseFloat(convP(pIni));
         const targetPoint = parseFloat(convP(targetKG));
-        
         const step = unitMode === 'KG' ? 0.45 : 1.0; 
         const totalSteps = Math.max(Math.ceil((pIni - targetKG) / 0.45), 10);
         
@@ -248,16 +274,53 @@
     }
 
     function toggleUnits(e) {
-        e.preventDefault(); e.stopPropagation(); // BLOQUEA APERTURA DE PACIENTE
+        e.preventDefault(); e.stopPropagation(); 
         unitMode = unitMode === 'KG' ? 'LB' : 'KG';
         document.getElementById('currentUnitText').innerText = unitMode === 'KG' ? 'KG / CM' : 'LB / IN';
         renderTable(globalData);
         if(currentPatient) selectPatient(currentPatient);
     }
 
-    function closeModal() { 
-        document.getElementById('modalDetalle').style.display = 'none'; 
-        document.body.style.overflow = 'auto';
+    function closeModal() { document.getElementById('modalDetalle').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    function openNewClientModal() { document.getElementById('modalNuevo').style.display = 'block'; }
+    function closeNewClientModal() { document.getElementById('modalNuevo').style.display = 'none'; }
+
+    async function saveNewClient() {
+        const pRaw = parseFloat(document.getElementById('newWeight').value);
+        const hRaw = parseFloat(document.getElementById('newHeight').value);
+        let pKG = unitMode === 'LB' ? pRaw / 2.20462 : pRaw;
+        let hCM = unitMode === 'LB' ? hRaw * 2.54 : hRaw;
+
+        const cliente = {
+            id: document.getElementById('newID').value,
+            nombre: document.getElementById('newName').value,
+            sexo: document.getElementById('newGender').value,
+            edad: document.getElementById('newAge').value,
+            altura: hCM.toFixed(0),
+            peso: pKG.toFixed(2),
+            grasa: document.getElementById('newFat').value,
+            fechaInicio: new Date().toISOString()
+        };
+        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
+        closeNewClientModal(); fetchData();
+    }
+
+    async function addSession() {
+        const pRaw = parseFloat(document.getElementById('sessWeight').value);
+        if(!pRaw || !currentPatient) return;
+        let pKG = unitMode === 'LB' ? pRaw / 2.20462 : pRaw;
+        const avance = { 
+            id: currentPatient.id, fecha: new Date().toISOString(), 
+            peso: pKG.toFixed(2), grasa: document.getElementById('sessFat').value || 0 
+        };
+        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
+        closeModal(); fetchData();
+    }
+
+    function filterTable() { 
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#clientTableBody tr');
+        rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none');
     }
     
     window.onload = fetchData;
