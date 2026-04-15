@@ -1,296 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Infra Baldan - Oxy Hyperbaric Professional</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    body { font-family: system-ui; }
-    #graficaContainer { height: 250px; position: relative; }
-    @media print {
-      body * { visibility: hidden; }
-      #modalDetalle, #modalDetalle * { visibility: visible; }
-      #modalDetalle { position: absolute; left: 0; top: 0; width: 100%; max-height: none; overflow: visible; }
-      button, .no-print { display: none !important; }
-      .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
-    }
-  </style>
-</head>
-<body class="bg-gray-50">
-
-<div class="max-w-6xl mx-auto p-6">
-  <div class="flex flex-col items-center mb-6">
-    <img src="logo.jpg" alt="Oxy Hyperbaric" class="h-[30px] mb-4" onerror="this.src='https://via.placeholder.com/150x30/0ea5e9/ffffff?text=OXY+HYPERBARIC';">
-    <h1 class="text-3xl font-bold text-center text-black">Infra Baldan</h1>
-    <p class="text-gray-500">Professional Body Composition & Metabolism Tracker</p>
-  </div>
-
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-    <button onclick="nuevoCliente()" class="bg-black text-white px-6 py-3 rounded-2xl hover:bg-gray-800 flex items-center gap-2">
-      <span>+</span> New Client
-    </button>
-    <div class="flex gap-3 w-full sm:w-auto">
-      <button onclick="toggleUnidadesGlobal()" class="bg-white border border-gray-300 px-6 py-3 rounded-2xl text-sm font-medium">
-        Units: <span id="unidadGlobalText">kg / cm</span>
-      </button>
-      <input id="buscar" type="text" placeholder="Search client..." onkeyup="renderLista()" class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl">
-    </div>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listaClientes"></div>
+<div class="flex flex-col items-center mb-12">
+  <img src="logo.jpg" alt="Oxy Hyperbaric" 
+       style="height: 120px !important; width: auto !important; min-height: 120px !important; display: block;" 
+       class="mb-6 object-contain" 
+       onerror="this.src='https://via.placeholder.com/400x120/000000/ffffff?text=OXY+HYPERBARIC';">
+  <h1 class="text-4xl font-black text-center text-black tracking-tighter uppercase italic">PredictaCore Titán</h1>
+  <div class="h-1.5 w-24 bg-blue-600 mt-2"></div>
 </div>
 
-<div id="modalCliente" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <div class="bg-white rounded-3xl w-full max-w-lg mx-4 p-6">
-    <h2 class="text-2xl font-bold mb-6">New Client Registration</h2>
-    <div class="space-y-5">
-      <input id="idPaciente" placeholder="Patient ID" class="w-full px-4 py-3 border border-blue-200 rounded-2xl text-lg font-bold bg-blue-50">
-      <input id="nombre" placeholder="Full Name" class="w-full px-4 py-3 border rounded-2xl text-lg">
-      <div class="grid grid-cols-2 gap-4">
-        <select id="sexo" onchange="sugerirGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
-          <option value="M">Male</option>
-          <option value="F">Female</option>
-        </select>
-        <input id="edad" type="number" placeholder="Age" onchange="sugerirGrasaIdeal()" class="px-4 py-3 border rounded-2xl">
-      </div>
-      <div class="grid grid-cols-3 gap-4">
-        <input id="altura" type="number" step="0.1" placeholder="Ht (cm)" class="px-4 py-3 border rounded-2xl">
-        <input id="peso" type="number" step="0.1" placeholder="Wt (kg)" class="px-4 py-3 border rounded-2xl">
-        <input id="grasa" type="number" step="0.1" placeholder="% Fat" class="px-4 py-3 border rounded-2xl">
-      </div>
-      <div>
-        <label class="text-xs text-gray-400 block ml-2">Recommended Goal Fat % (Scientific Range)</label>
-        <input id="grasaObjetivo" type="number" step="0.1" class="w-full px-4 py-3 border rounded-2xl text-lg font-medium">
-      </div>
-    </div>
-    <div class="flex gap-3 mt-8">
-      <button onclick="cerrarModal()" class="flex-1 py-4 text-gray-600 font-medium">Cancel</button>
-      <button onclick="guardarCliente()" id="btnGuardar" class="flex-1 bg-black text-white py-4 rounded-2xl font-medium">Save Record</button>
-    </div>
-  </div>
+<div class="flex justify-end mb-4 px-4">
+  <button onclick="toggleUnits(event)" id="unitToggle" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition-all border-2 border-gray-200 focus:outline-none">
+    Unidades: <span id="currentUnitText" class="text-blue-600">KG</span>
+  </button>
 </div>
 
-<div id="modalDetalle" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <div class="bg-white rounded-3xl w-full max-w-3xl mx-4 p-6 max-h-[92vh] overflow-auto">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-3xl font-bold" id="nombreDetalle"></h2>
-      <div class="flex gap-2 no-print">
-        <button onclick="window.print()" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold">Download Report</button>
-        <button onclick="cerrarDetalle()" class="text-4xl leading-none text-gray-400 hover:text-black ml-4">×</button>
-      </div>
-    </div>
-    
-    <div id="resumenCalculo" class="bg-gray-100 rounded-3xl p-6 mb-8"></div>
-    
-    <div id="metabolismData" class="grid grid-cols-2 gap-4 mb-8"></div>
+<div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+  <table class="w-full text-left">
+    <thead class="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-widest text-gray-400">
+      <tr>
+        <th class="px-6 py-4">Paciente</th>
+        <th class="px-6 py-4 text-center">Status</th>
+        <th class="px-6 py-4 text-right">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="clientTableBody">
+      </tbody>
+  </table>
+</div>
 
-    <div id="progresoContainer" class="mb-8"></div>
-
-    <div class="grid grid-cols-2 gap-4 mb-8 text-sm">
-      <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Start Date</div>
-        <div class="font-medium" id="fechaInicio"></div>
-      </div>
-      <div class="bg-white border rounded-2xl p-4">
-        <div class="text-gray-500">Estimated Duration</div>
-        <div class="font-medium" id="tiempoMeta"></div>
-      </div>
+<div id="referencePanel" class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-b border-gray-100 py-6 my-8 bg-gray-50/50 rounded-xl">
+    <div class="text-center">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Target Fat %</p>
+        <div id="refFatRange" class="text-lg font-black text-gray-800">18% - 24%</div>
     </div>
-
-    <div class="mb-8">
-      <h4 class="text-sm font-medium text-gray-600 mb-3">Weight Projection vs Actual</h4>
-      <div id="graficaContainer" class="border border-gray-200 rounded-3xl p-4 bg-white">
-        <canvas id="grafica"></canvas>
-      </div>
+    <div class="text-center border-l border-r border-gray-100">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Optimal FFMI</p>
+        <div id="refFFMIRange" class="text-lg font-black text-gray-800">19.5 - 21.0</div>
     </div>
-
-    <div class="grid grid-cols-3 gap-4 mb-8 no-print">
-      <input id="fechaAvance" type="date" class="px-4 py-3 border rounded-2xl">
-      <input id="pesoAvance" type="number" step="0.1" placeholder="Weight" class="px-4 py-3 border rounded-2xl">
-      <input id="grasaAvance" type="number" step="0.1" placeholder="% Fat" class="px-4 py-3 border rounded-2xl">
-      <button onclick="agregarAvance()" id="btnAvance" class="col-span-3 bg-black text-white py-4 rounded-2xl font-medium">Add Progress Entry</button>
+    <div class="text-center">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metabolic Age</p>
+        <div id="metabolicAgeStatus" class="text-lg font-black text-blue-600">Optimal</div>
     </div>
-  </div>
 </div>
 
 <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfTBe73GaXzem3p08rDd6N5ebXgBt2EROVx6HbrMrPATX2a8bbkoPiV1PhyifbjUU6/exec";
-  let clientes = [];
-  let clienteSeleccionado = null;
-  let usaLibras = false;
-  let chartInstance = null;
+// --- LÓGICA DE CONTROL ---
+let unitMode = 'KG';
 
-  const KG_TO_LBS = 2.20462;
-  const BAJA_POR_SEMANA_KG = 0.907;
-
-  function sugerirGrasaIdeal() {
-    const edad = parseInt(document.getElementById('edad').value) || 30;
-    const sexo = document.getElementById('sexo').value;
-    let sugerencia = 15;
-    if (sexo === 'M') {
-      if (edad < 30) sugerencia = 15;
-      else if (edad < 50) sugerencia = 18;
-      else sugerencia = 21;
-    } else {
-      if (edad < 30) sugerencia = 22;
-      else if (edad < 50) sugerencia = 25;
-      else sugerencia = 28;
+function toggleUnits(event) {
+    // CRÍTICO: Esto detiene el clic para que NO se abra el cliente
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
-    document.getElementById('grasaObjetivo').value = sugerencia;
-  }
-
-  function calcularBio(c) {
-    const peso = parseFloat(c.peso) || 0;
-    const grasaActual = parseFloat(c.grasa) || 0;
-    const alturaM = (parseFloat(c.altura) || 170) / 100;
-    const grasaIdeal = parseFloat(c.grasaObjetivo) || 20;
-
-    const masaMagra = peso * (1 - grasaActual / 100);
-    const pesoIdeal = masaMagra / (1 - grasaIdeal / 100);
-    const bmr = 370 + (21.6 * masaMagra); // Katch-McArdle
-    const ffmi = masaMagra / (alturaM * alturaM);
-
-    return { pesoIdeal, kgBajar: Math.max(0, peso - pesoIdeal), bmr, ffmi };
-  }
-
-  function toggleUnidadesGlobal() {
-    usaLibras = !usaLibras;
-    const uP = usaLibras ? "lbs" : "kg";
-    document.getElementById('unidadGlobalText').textContent = `${uP} / cm`;
-    if (clienteSeleccionado) verDetalle(clienteSeleccionado);
-  }
-
-  async function cargarClientes() {
-    try {
-      const res = await fetch(WEB_APP_URL + "?action=obtenerClientes");
-      clientes = await res.json();
-      renderLista();
-    } catch (e) { console.error(e); }
-  }
-
-  function renderLista() {
-    const container = document.getElementById('listaClientes');
-    container.innerHTML = '';
-    const term = document.getElementById('buscar').value.toLowerCase();
-    clientes.forEach(c => {
-      if (c.nombre.toLowerCase().includes(term)) {
-        const card = document.createElement('div');
-        card.className = "bg-white rounded-3xl shadow p-6 cursor-pointer hover:shadow-xl transition";
-        card.innerHTML = `<div class="text-xs font-bold text-blue-500 mb-1">ID: ${c.id}</div><div class="font-semibold text-xl mb-1">${c.nombre}</div><div class="text-gray-500 text-sm">${c.sexo === 'M' ? 'Male' : 'Female'} • ${c.edad} yrs</div>`;
-        card.onclick = () => verDetalle(c);
-        container.appendChild(card);
-      }
-    });
-  }
-
-  function verDetalle(c) {
-    clienteSeleccionado = c;
-    const bio = calcularBio(c);
-    const factor = usaLibras ? KG_TO_LBS : 1;
-    const u = usaLibras ? "lbs" : "kg";
-
-    const listaAvances = c.avances || [];
-    const ultimoPeso = listaAvances.length > 0 ? listaAvances[listaAvances.length - 1].peso : c.peso;
-    const ultimoGrasa = listaAvances.length > 0 ? listaAvances[listaAvances.length - 1].grasa : c.grasa;
-
-    document.getElementById('nombreDetalle').textContent = c.nombre;
-    document.getElementById('resumenCalculo').innerHTML = `
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div><div class="text-xs text-gray-500">CURRENT WEIGHT</div><div class="text-3xl font-bold">${(ultimoPeso * factor).toFixed(1)} ${u}</div></div>
-        <div><div class="text-xs text-gray-500">BODY FAT</div><div class="text-3xl font-bold">${ultimoGrasa}%</div></div>
-        <div><div class="text-xs text-gray-500">GOAL FAT</div><div class="text-3xl font-bold text-blue-600">${c.grasaObjetivo}%</div></div>
-        <div><div class="text-xs text-gray-500">TARGET WEIGHT</div><div class="text-3xl font-bold">${(bio.pesoIdeal * factor).toFixed(1)} ${u}</div></div>
-      </div>`;
-
-    document.getElementById('metabolismData').innerHTML = `
-      <div class="bg-blue-50 p-4 rounded-2xl">
-        <div class="text-xs text-blue-600 font-bold uppercase">Basal Metabolic Rate (BMR)</div>
-        <div class="text-2xl font-bold">${Math.round(bio.bmr)} kcal/day</div>
-        <div class="text-[10px] text-blue-400 mt-1">Calories burned at rest.</div>
-      </div>
-      <div class="bg-gray-50 p-4 rounded-2xl">
-        <div class="text-xs text-gray-600 font-bold uppercase">FFMI Index</div>
-        <div class="text-2xl font-bold">${bio.ffmi.toFixed(1)}</div>
-        <div class="text-[10px] text-gray-400 mt-1">Muscle mass to height ratio.</div>
-      </div>`;
-
-    document.getElementById('fechaInicio').textContent = new Date(c.fechaInicio).toLocaleDateString();
-    document.getElementById('tiempoMeta').textContent = `${Math.ceil(bio.kgBajar / BAJA_POR_SEMANA_KG)} Weeks`;
-    document.getElementById('modalDetalle').classList.remove('hidden');
-    actualizarGrafica(c, factor, bio.pesoIdeal);
-  }
-
-  function actualizarGrafica(c, factor, pesoIdeal) {
-    if (chartInstance) chartInstance.destroy();
-    const ctx = document.getElementById('grafica').getContext('2d');
-    const labels = ["Week 0"];
-    const dataReal = [c.peso * factor];
-    const dataObjetivo = [c.peso * factor];
     
-    if(c.avances) {
-      c.avances.forEach((a, i) => {
-        labels.push("Wk " + (i+1));
-        dataReal.push(a.peso * factor);
-      });
+    unitMode = (unitMode === 'KG') ? 'LB' : 'KG';
+    document.getElementById('currentUnitText').innerText = unitMode;
+    console.log("Modo cambiado a:", unitMode);
+}
+
+// --- FUNCIÓN PARA GUARDAR NUEVO CLIENTE (CON CONVERSIÓN) ---
+function guardarNuevoCliente(datos) {
+    let pesoFinal = parseFloat(datos.peso);
+
+    // Si el usuario ingresó el dato en Libras, lo convertimos a KG para la base de datos
+    if (unitMode === 'LB') {
+        pesoFinal = pesoFinal / 2.20462;
+        console.log("Conversión aplicada: de LB a KG");
     }
 
-    let pesoProyectado = c.peso;
-    for(let i = 1; i <= 16; i++) {
-      if (labels.length <= i) labels.push("Wk " + i);
-      pesoProyectado -= BAJA_POR_SEMANA_KG;
-      if (pesoProyectado < pesoIdeal) pesoProyectado = pesoIdeal;
-      dataObjetivo.push(pesoProyectado * factor);
-    }
-
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          { label: 'Actual Progress', data: dataReal, borderColor: '#000', borderWidth: 3, fill: false },
-          { label: 'Scientific Goal', data: dataObjetivo, borderColor: '#3b82f6', borderDash: [5, 5], fill: false, pointRadius: 0 }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false }
-    });
-  }
-
-  async function guardarCliente() {
-    const id = document.getElementById('idPaciente').value.trim();
-    if(!id) return alert("ID Required");
-    const btn = document.getElementById('btnGuardar');
-    btn.disabled = true;
-    let p = parseFloat(document.getElementById('peso').value);
-    let a = parseFloat(document.getElementById('altura').value);
-    if (usaLibras) { p /= KG_TO_LBS; }
-
-    const cliente = {
-      id, nombre: document.getElementById('nombre').value, sexo: document.getElementById('sexo').value,
-      edad: document.getElementById('edad').value, altura: a, peso: p,
-      grasa: document.getElementById('grasa').value, grasaObjetivo: document.getElementById('grasaObjetivo').value,
-      fechaInicio: new Date().toISOString()
+    const payload = {
+        nombre: datos.nombre,
+        peso: pesoFinal.toFixed(2), // Siempre guardamos en KG
+        altura: datos.altura,
+        edad: datos.edad,
+        sexo: datos.sexo
     };
 
-    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente })});
-    alert("Record Saved."); cerrarModal(); cargarClientes();
-    btn.disabled = false;
-  }
-
-  async function agregarAvance() {
-    let p = parseFloat(document.getElementById('pesoAvance').value);
-    let g = parseFloat(document.getElementById('grasaAvance').value);
-    let f = document.getElementById('fechaAvance').value;
-    if(!p || !g || !f) return alert("Fields required");
-    if (usaLibras) p /= KG_TO_LBS;
-    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: { id: clienteSeleccionado.id, peso: p, grasa: g, fecha: f }})});
-    alert("Progress Added."); cerrarDetalle(); cargarClientes();
-  }
-
-  function nuevoCliente() { document.getElementById('modalCliente').classList.remove('hidden'); sugerirGrasaIdeal(); }
-  function cerrarModal() { document.getElementById('modalCliente').classList.add('hidden'); }
-  function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); }
-  window.onload = cargarClientes;
+    // Aquí envías el payload a Google Apps Script
+    // google.script.run.addNewClient(payload);
+    console.log("Guardando en base de datos (siempre en KG):", payload);
+}
 </script>
-</body>
-</html>
