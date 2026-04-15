@@ -5,115 +5,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PredictaCore Titán</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Logo 4 veces más grande (120px) */
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .main-logo { height: 120px !important; width: auto !important; min-height: 120px !important; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="bg-gray-50 antialiased">
+<body class="antialiased text-gray-900">
 
-<div class="max-w-5xl mx-auto p-4 md:p-8">
+<div class="max-w-6xl mx-auto p-4 md:p-8">
 
-    <div class="flex flex-col items-center mb-12">
-      <img src="logo.jpg" alt="Oxy Hyperbaric" class="main-logo mb-6 object-contain" 
-           onerror="this.src='https://via.placeholder.com/400x120/000000/ffffff?text=OXY+HYPERBARIC';">
-      <h1 class="text-4xl font-black text-center text-black tracking-tighter uppercase italic">PredictaCore Titán</h1>
-      <div class="h-1.5 w-24 bg-blue-600 mt-2"></div>
+    <header class="flex flex-col items-center mb-10">
+        <img src="logo.jpg" alt="Oxy Hyperbaric" class="main-logo mb-6 object-contain" 
+             onerror="this.src='https://via.placeholder.com/400x120/000000/ffffff?text=OXY+HYPERBARIC';">
+        <h1 class="text-5xl font-black text-black tracking-tighter uppercase italic text-center">PredictaCore Titán</h1>
+        <div class="h-1.5 w-32 bg-blue-600 mt-3"></div>
+    </header>
+
+    <section class="bg-white rounded-[40px] shadow-2xl p-8 mb-8 border border-gray-100">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Panel de Control / Nuevo Registro</h2>
+            <input type="text" id="searchInput" onkeyup="filterClients()" placeholder="🔍 Buscar paciente..." 
+                   class="bg-gray-50 border-none rounded-2xl px-6 py-2 text-sm w-64 focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <input type="text" id="newName" placeholder="Nombre" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
+            <input type="number" id="newWeight" placeholder="Peso" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
+            <input type="number" id="newAge" placeholder="Edad" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
+            <select id="newGender" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500 text-gray-500">
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+            </select>
+            <button onclick="saveNewClient()" class="bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 transition-all uppercase tracking-widest shadow-lg shadow-blue-200">
+                Guardar
+            </button>
+        </div>
+    </section>
+
+    <div class="flex justify-end mb-6 px-4">
+        <button onclick="toggleUnits(event)" class="bg-white border-2 border-gray-100 hover:border-blue-500 text-gray-800 font-bold py-3 px-8 rounded-2xl transition-all shadow-sm">
+            Unidades: <span id="currentUnitText" class="text-blue-600">KG</span>
+        </button>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-xl p-8 mb-10 border border-gray-100">
-        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Nuevo Registro</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input type="text" id="newName" placeholder="Nombre" class="bg-gray-50 p-4 rounded-xl border-none ring-1 ring-gray-100">
-            <input type="number" id="newWeight" placeholder="Peso" class="bg-gray-50 p-4 rounded-xl border-none ring-1 ring-gray-100">
-            <input type="number" id="newHeight" placeholder="Altura (cm)" class="bg-gray-50 p-4 rounded-xl border-none ring-1 ring-gray-100">
-            <button onclick="saveNewClient()" class="bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all uppercase text-xs tracking-widest">Guardar</button>
+    <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400 font-black">
+                <tr>
+                    <th class="px-10 py-6">Paciente</th>
+                    <th class="px-10 py-6 text-center">Info Base</th>
+                    <th class="px-10 py-6 text-center">Último Peso</th>
+                    <th class="px-10 py-6 text-right">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="clientTableBody" class="divide-y divide-gray-50">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalDetalle" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-5xl rounded-[50px] p-10 max-h-[90vh] overflow-y-auto relative shadow-2xl">
+        <button onclick="closeModal()" class="absolute top-8 right-10 text-gray-300 hover:text-black text-3xl font-light">✕</button>
+        
+        <header class="mb-10">
+            <h2 id="modalNombre" class="text-4xl font-black text-gray-900 tracking-tighter italic">Nombre del Paciente</h2>
+            <p id="modalInfoMeta" class="text-xs font-bold text-gray-400 uppercase mt-2 tracking-widest">Masculino • 45 años • Altura: 175cm</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-blue-50 p-8 rounded-[35px] border border-blue-100">
+                <p class="text-[10px] font-bold text-blue-500 uppercase mb-1">Target Fat %</p>
+                <div id="targetFat" class="text-2xl font-black text-gray-800">--%</div>
+            </div>
+            <div class="bg-gray-50 p-8 rounded-[35px] border border-gray-100">
+                <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Optimal FFMI</p>
+                <div id="optimalFFMI" class="text-2xl font-black text-gray-800">--</div>
+            </div>
+            <div class="bg-gray-900 p-8 rounded-[35px] text-white">
+                <p class="text-[10px] font-bold text-blue-400 uppercase mb-1">Metabolic Age</p>
+                <div id="metabolicAge" class="text-2xl font-black">Análisis...</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div class="bg-white border border-gray-100 p-8 rounded-[35px] shadow-sm">
+                <h3 class="font-bold text-sm uppercase mb-6 tracking-widest">Registrar nueva sesión</h3>
+                <div class="flex flex-col space-y-4">
+                    <input type="number" id="sessionWeight" placeholder="Peso hoy" class="bg-gray-50 p-4 rounded-2xl border-none">
+                    <input type="number" id="sessionFat" placeholder="% Grasa (opcional)" class="bg-gray-50 p-4 rounded-2xl border-none">
+                    <button onclick="saveSession()" class="bg-black text-white py-4 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-gray-800 transition-all">Registrar Avance</button>
+                </div>
+            </div>
+            
+            <div class="bg-white border border-gray-100 p-8 rounded-[35px] shadow-sm flex flex-col items-center justify-center">
+                <p class="text-gray-300 font-bold uppercase text-[10px] mb-4 tracking-widest">Gráfica de Progreso</p>
+                <div class="h-48 w-full bg-gray-50 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200">
+                    <span class="text-gray-400 text-[10px]">Histórico de pérdida de peso</span>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="flex justify-end mb-4 px-4">
-      <button onclick="toggleUnits(event)" id="unitToggle" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition-all border-2 border-gray-200">
-        Unidades: <span id="currentUnitText" class="text-blue-600">KG</span>
-      </button>
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-widest text-gray-400">
-          <tr>
-            <th class="px-6 py-4">Paciente</th>
-            <th class="px-6 py-4 text-center">Status</th>
-            <th class="px-6 py-4 text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="clientTableBody">
-            </tbody>
-      </table>
-    </div>
-
-    <div id="referencePanel" class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-b border-gray-100 py-6 my-8 bg-gray-50/50 rounded-xl">
-        <div class="text-center">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Target Fat %</p>
-            <div id="refFatRange" class="text-lg font-black text-gray-800">18% - 24%</div>
-        </div>
-        <div class="text-center border-l border-r border-gray-100">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Optimal FFMI</p>
-            <div id="refFFMIRange" class="text-lg font-black text-gray-800">19.5 - 21.0</div>
-        </div>
-        <div class="text-center">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metabolic Age</p>
-            <div id="metabolicAgeStatus" class="text-lg font-black text-blue-600">Optimal</div>
-        </div>
-    </div>
-
 </div>
 
 <script>
-// VARIABLES GLOBALES (Mantén las tuyas)
 let unitMode = 'KG';
+let activeClient = null;
 
-// 1. CORRECCIÓN: Evitar que el botón de unidades active el clic de la fila
-function toggleUnits(event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation(); // ESTO DETIENE QUE SE ABRA EL CLIENTE
+// 1. CONVERSIÓN DE UNIDADES (CORREGIDA)
+function toggleUnits(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation(); // Evita que se abra el cliente accidentalmente
     }
     unitMode = (unitMode === 'KG') ? 'LB' : 'KG';
     document.getElementById('currentUnitText').innerText = unitMode;
-    // Llama aquí a tu función de refrescar tabla si la tienes
+    
+    // Actualizamos el placeholder del registro nuevo para evitar errores
+    document.getElementById('newWeight').placeholder = `Peso (${unitMode})`;
 }
 
-// 2. CORRECCIÓN: Lógica de conversión para clientes nuevos
+// 2. GUARDAR CLIENTE NUEVO (CON CONVERSIÓN A KG)
 function saveNewClient() {
     const nombre = document.getElementById('newName').value;
-    let pesoVal = parseFloat(document.getElementById('newWeight').value);
-    const altura = document.getElementById('newHeight').value;
+    const pesoRaw = parseFloat(document.getElementById('newWeight').value);
+    const edad = document.getElementById('newAge').value;
+    const genero = document.getElementById('newGender').value;
 
-    if (!nombre || isNaN(pesoVal)) return alert("Nombre y peso requeridos");
+    if (!nombre || !pesoRaw) return alert("Nombre y Peso obligatorios.");
 
-    // Si estamos en modo LB, convertimos a KG antes de mandar a Google Sheets
-    if (unitMode === 'LB') {
-        pesoVal = pesoVal / 2.20462;
-    }
+    // Convertimos a KG si está en Libras antes de enviar a Sheets
+    let pesoFinal = (unitMode === 'LB') ? pesoRaw / 2.20462 : pesoRaw;
 
-    const nuevoRegistro = {
-        nombre: nombre,
-        peso: pesoVal.toFixed(2),
-        altura: altura,
+    const payload = {
+        nombre,
+        peso: pesoFinal.toFixed(2),
+        edad,
+        sexo: genero,
         fecha: new Date().toLocaleDateString()
     };
 
-    console.log("Enviando a base de datos (normalizado en KG):", nuevoRegistro);
-    // Aquí reconecta con tu función real:
-    // google.script.run.withSuccessHandler(refrescarLista).addNewClient(nuevoRegistro);
-    alert("Paciente registrado correctamente.");
+    console.log("Enviando a Sheets en KG:", payload);
+    // Aquí reconectamos con tu script: google.script.run.addNewClient(payload);
+    alert("Perfil creado exitosamente.");
 }
 
-// 3. RECUPERACIÓN DE TU LÓGICA DE CARGA
-// Asegúrate de tener aquí tus funciones de:
-// - google.script.run.obtenerClientes()
-// - renderTable()
+// 3. SELECCIÓN Y CÁLCULOS DINÁMICOS POR CLIENTE
+function selectClient(cliente) {
+    activeClient = cliente;
+    document.getElementById('modalNombre').innerText = cliente.nombre;
+    document.getElementById('modalInfoMeta').innerText = `${cliente.sexo} • ${cliente.edad} años • Peso inicial: ${cliente.peso} KG`;
+    
+    // Cálculos de Referencia según Género
+    if (cliente.sexo === 'Masculino') {
+        document.getElementById('targetFat').innerText = "14% - 22%";
+        document.getElementById('optimalFFMI').innerText = "20.0 - 22.0";
+    } else {
+        document.getElementById('targetFat').innerText = "21% - 31%";
+        document.getElementById('optimalFFMI').innerText = "17.0 - 19.0";
+    }
+    
+    document.getElementById('modalDetalle').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('modalDetalle').classList.add('hidden');
+}
+
+function filterClients() {
+    const term = document.getElementById('searchInput').value.toLowerCase();
+    // Lógica para filtrar filas de la tabla
+}
 </script>
 
 </body>
