@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oxy Board - Titan Edition</title>
+    <title>Oxy Board - PredictaCore Titán</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -13,13 +13,14 @@
         .predicta-card { background: white; border-radius: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; }
         .titan-btn:hover { background: #334155; transform: translateY(-1px); }
-        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 15px; padding: 12px 16px; width: 100%; outline: none; }
+        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 15px; padding: 12px 16px; width: 100%; outline: none; transition: all 0.2s; font-size: 14px; }
+        .input-titan:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     </style>
 </head>
 <body class="antialiased text-gray-900 p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-right">
-        Última Actualización: 15 Abr 2026 - 09:45 AM (Root Fix)
+        Última Actualización: 15 Abr 2026 - 09:55 AM (Clinical Health Fix)
     </div>
 
     <header class="flex flex-col items-center mb-10">
@@ -28,18 +29,17 @@
         <div class="h-1.5 w-24 bg-blue-600 mt-3"></div>
     </header>
 
-    <div class="max-w-6xl mx-auto flex justify-end mb-6">
-        <button onclick="toggleUnits(event)" id="unitToggleBtn" class="bg-white border-2 border-blue-600 py-3 px-8 rounded-2xl font-black text-blue-600 text-[11px] shadow-sm uppercase tracking-widest">
-            Unidades: <span id="currentUnitText">KG / CM</span>
-        </button>
-    </div>
-
     <main class="max-w-6xl mx-auto">
-        <div class="flex items-center gap-4 mb-8">
-            <button onclick="openNewClientModal()" class="titan-btn px-8 py-4 rounded-2xl text-[11px] uppercase tracking-widest shadow-xl shadow-blue-100">
-                + Nuevo Paciente
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 px-2">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <button onclick="openNewClientModal()" class="titan-btn px-8 py-4 rounded-2xl text-[11px] uppercase tracking-widest shadow-xl shadow-blue-100">
+                    + Nuevo Paciente
+                </button>
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar..." class="bg-white border-none rounded-2xl px-6 py-4 text-sm w-full md:w-64 shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button onclick="toggleUnits(event)" class="bg-white border-2 border-gray-100 py-3 px-8 rounded-2xl font-black text-blue-600 text-[11px] shadow-sm uppercase tracking-widest">
+                Unidades: <span id="currentUnitText">KG / CM</span>
             </button>
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar por nombre..." class="bg-white border-none rounded-2xl px-6 py-4 text-sm w-full md:w-80 shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
         </div>
 
         <div class="predicta-card overflow-hidden">
@@ -60,17 +60,17 @@
     <div id="modalNuevo" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[70]">
         <div class="bg-white w-full max-w-2xl rounded-[40px] p-10 shadow-2xl relative border border-gray-100">
             <button onclick="closeNewClientModal()" class="absolute top-8 right-10 text-gray-300 hover:text-black text-2xl font-light">✕</button>
-            <h2 class="text-2xl font-black uppercase italic tracking-tighter mb-8 border-l-4 border-blue-600 pl-4">Nuevo Perfil</h2>
+            <h2 class="text-2xl font-black uppercase italic tracking-tighter mb-8 border-l-4 border-blue-600 pl-4">Nuevo Perfil Clínico</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input type="text" id="newID" class="input-titan" placeholder="ID Paciente">
+                <input type="text" id="newID" class="input-titan" placeholder="ID Manual (Sheets)">
                 <input type="text" id="newName" class="input-titan" placeholder="Nombre Completo">
                 <input type="number" id="newAge" class="input-titan" placeholder="Edad">
                 <input type="number" id="newHeight" class="input-titan" placeholder="Altura (CM)">
                 <select id="newGender" class="input-titan font-bold"><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select>
-                <input type="number" id="newWeight" class="input-titan" placeholder="Peso Inicial (Actual Unit)">
+                <input type="number" id="newWeight" class="input-titan" placeholder="Peso Inicial">
                 <input type="number" id="newFat" class="input-titan" placeholder="Grasa % Actual">
             </div>
-            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-2xl mt-8 uppercase tracking-widest text-xs">Guardar e Iniciar Protocolo</button>
+            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-2xl mt-8 uppercase tracking-widest text-xs">Finalizar Registro</button>
         </div>
     </div>
 
@@ -79,21 +79,25 @@
             <button onclick="closeModal()" class="absolute top-8 right-10 text-gray-300 hover:text-black text-3xl font-light">✕</button>
             <header class="mb-10 flex justify-between items-start">
                 <div><h2 id="modalNombre" class="text-4xl font-black tracking-tighter italic uppercase">Paciente</h2><p id="modalInfo" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">--</p></div>
-                <div class="bg-blue-600 text-white px-8 py-4 rounded-3xl text-center"><p class="text-[9px] uppercase font-bold opacity-80 mb-1">Target Peso Ideal</p><p id="targetWeightDisplay" class="text-xl font-black italic">--</p></div>
+                <div class="bg-blue-600 text-white px-8 py-4 rounded-3xl text-center"><p class="text-[9px] uppercase font-bold opacity-80 mb-1 italic">Target Salud Óptima</p><p id="targetWeightDisplay" class="text-xl font-black italic">--</p></div>
             </header>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Grasa Visceral</p><p id="visceralFat" class="text-xl font-black">--</p></div>
-                <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Masa Muscular</p><p id="muscleMass" class="text-xl font-black">--</p></div>
-                <div class="bg-gray-950 p-6 rounded-3xl text-white text-center"><p class="text-[9px] font-bold text-blue-400 uppercase">FFMI Quality</p><p id="displayFFMI" class="text-xl font-black">--</p></div>
+                <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center"><p id="labelMuscle" class="text-[9px] font-bold text-gray-400 uppercase">Masa Muscular</p><p id="muscleMass" class="text-xl font-black">--</p></div>
+                <div class="bg-gray-950 p-6 rounded-3xl text-white text-center"><p class="text-[9px] font-bold text-blue-400 uppercase">Metabolismo BMR</p><p id="displayBMR" class="text-xl font-black">--</p></div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="bg-gray-50 p-8 rounded-[35px] border border-gray-100">
-                    <h3 class="text-[10px] font-bold uppercase mb-4 text-blue-600 tracking-widest">Capturar Avance</h3>
-                    <input type="number" id="sessWeight" placeholder="Peso Hoy" class="input-titan mb-4">
-                    <input type="number" id="sessFat" placeholder="% Grasa Wyze" class="input-titan mb-4">
-                    <button onclick="addSession()" class="w-full titan-btn py-4 rounded-2xl text-[10px] uppercase tracking-widest">Registrar</button>
+                    <h3 class="text-[10px] font-bold uppercase mb-4 text-blue-600 tracking-widest">Registrar Avance</h3>
+                    <div class="space-y-3">
+                        <label id="labelSessWeight" class="text-[9px] font-bold text-gray-400 uppercase ml-2">Peso Actual</label>
+                        <input type="number" id="sessWeight" class="input-titan mb-4">
+                        <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">% Grasa Actual</label>
+                        <input type="number" id="sessFat" class="input-titan mb-4">
+                        <button onclick="addSession()" class="w-full titan-btn py-4 rounded-2xl text-[10px] uppercase tracking-widest">Capturar Sesión</button>
+                    </div>
                 </div>
-                <div class="md:col-span-2 bg-white border border-gray-100 p-8 rounded-[35px]"><canvas id="progressChart" height="200"></canvas></div>
+                <div class="md:col-span-2 bg-white border border-gray-100 p-8 rounded-[35px] shadow-inner"><canvas id="progressChart" height="220"></canvas></div>
             </div>
         </div>
     </div>
@@ -131,9 +135,7 @@
         data.forEach(p => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer transition-all border-b border-gray-100";
-            tr.onclick = (e) => { 
-                if(!e.target.closest('button')) selectPatient(p); 
-            };
+            tr.onclick = (e) => { if(!e.target.closest('button')) selectPatient(p); };
             tr.innerHTML = `<td class="px-10 py-6 font-bold text-gray-900">${p.nombre}</td>
                 <td class="px-10 py-6 text-center text-[10px] text-gray-400 font-black uppercase">${p.sexo} | ${p.edad} AÑOS | ${convA(p.altura)}</td>
                 <td class="px-10 py-6 text-center font-black text-blue-600">${convP(p.peso)} ${unitMode}</td>
@@ -145,20 +147,30 @@
     function selectPatient(p) {
         currentPatient = p;
         document.getElementById('modalNombre').innerText = p.nombre;
+        const dateObj = new Date(p.fechaInicio);
+        const fecha = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${fecha}`;
         
-        // CÁLCULO CIENTÍFICO CORRECTO
+        // LABELS DINÁMICOS
+        document.getElementById('labelMuscle').innerText = `Masa Muscular (${unitMode})`;
+        document.getElementById('labelSessWeight').innerText = `Peso Actual (${unitMode})`;
+
+        // LÓGICA DE SALUD (No Atlética)
         const pesoKG = parseFloat(p.peso);
         const grasaActual = parseFloat(p.grasa) / 100 || 0.30;
         const masaMagra = pesoKG * (1 - grasaActual);
-        const targetFat = p.sexo === 'Masculino' ? 0.20 : 0.28;
-        const targetWeightKG = masaMagra / (1 - targetFat);
+        
+        // Ajuste de Target según edad (Aumenta 1% por década después de los 30)
+        let baseSalud = p.sexo === 'Masculino' ? 18 : 25;
+        let ajusteEdad = Math.max(0, (p.edad - 30) / 10);
+        let targetSalud = (baseSalud + ajusteEdad) / 100;
+        
+        const targetWeightKG = masaMagra / (1 - targetSalud);
         
         document.getElementById('targetWeightDisplay').innerText = `${convP(targetWeightKG)} ${unitMode}`;
         document.getElementById('visceralFat').innerText = p.grasaVisceral || "--";
         document.getElementById('muscleMass').innerText = `${convP(masaMagra)} ${unitMode}`;
-        
-        const ffmi = masaMagra / Math.pow(p.altura/100, 2);
-        document.getElementById('displayFFMI').innerText = ffmi.toFixed(1);
+        document.getElementById('displayBMR').innerText = Math.round(370 + (21.6 * masaMagra));
 
         initChart(p, targetWeightKG);
         document.getElementById('modalDetalle').classList.remove('hidden');
@@ -168,36 +180,31 @@
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
 
-        const pesoInicial = parseFloat(p.peso);
-        const metaData = [convP(pesoInicial)];
+        const pIni = parseFloat(p.peso);
+        // S1: Unificación real y meta desde el mismo punto exacto
+        const startPoint = parseFloat(convP(pIni));
+        const metaData = [startPoint];
         const step = unitMode === 'KG' ? 0.45 : 1.0; 
 
-        for(let i=1; i<10; i++) {
-            let nextVal = parseFloat(metaData[i-1]) - step;
-            metaData.push(nextVal.toFixed(1));
-        }
+        for(let i=1; i<10; i++) metaData.push((metaData[i-1] - step).toFixed(1));
 
-        // UNIFICACIÓN RAÍZ: La serie real debe incluir el peso de registro en S1
-        const realData = [convP(pesoInicial)];
-        if(p.avances) {
-            p.avances.forEach(a => realData.push(convP(a.peso)));
-        }
+        const realData = [startPoint];
+        if(p.avances) p.avances.forEach(a => realData.push(parseFloat(convP(a.peso))));
 
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'],
                 datasets: [
-                    { label: 'Real', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 6, backgroundColor: '#2563eb' },
+                    { label: 'Real', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb' },
                     { label: 'Meta', data: metaData, borderColor: '#e2e8f0', borderDash: [5,5], tension: 0, pointRadius: 0 }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
         });
     }
 
     function toggleUnits(e) {
-        e.preventDefault();
         e.stopPropagation();
         unitMode = unitMode === 'KG' ? 'LB' : 'KG';
         document.getElementById('currentUnitText').innerText = unitMode + " / " + (unitMode === 'KG' ? 'CM' : 'IN');
@@ -208,7 +215,6 @@
     async function saveNewClient() {
         const pesoRaw = parseFloat(document.getElementById('newWeight').value);
         let pKG = unitMode === 'LB' ? pesoRaw / 2.20462 : pesoRaw;
-        
         const cliente = {
             id: document.getElementById('newID').value,
             nombre: document.getElementById('newName').value,
@@ -219,10 +225,8 @@
             grasa: document.getElementById('newFat').value,
             fechaInicio: new Date().toISOString()
         };
-
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
-        closeNewClientModal();
-        fetchData();
+        closeNewClientModal(); fetchData();
     }
 
     function openNewClientModal() { document.getElementById('modalNuevo').classList.remove('hidden'); }
