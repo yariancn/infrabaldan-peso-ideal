@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictaCore Titán - Clinical Master</title>
+    <title>OXYHYPERBARIC INFRA BADAN 3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -19,6 +19,7 @@
         .modal-content { background: white; width: 92vw; max-width: 1200px; height: 88vh; margin: 6vh auto; border-radius: 40px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 20px 40px; border-bottom: 1px solid #f1f5f9; }
 
+        /* IMPRESIÓN EN UNA SOLA HOJA */
         @media print {
             @page { size: auto; margin: 5mm; }
             .no-print, .unit-control, button, input { display: none !important; }
@@ -33,21 +34,21 @@
 <body class="antialiased p-4">
 
     <div class="fixed top-6 right-8 z-[110] no-print">
-        <button onclick="toggleUnits(event)" class="bg-blue-600 text-white py-2 px-6 rounded-xl font-black text-[10px] shadow-xl uppercase tracking-widest border-2 border-white hover:bg-blue-700 transition-all">
+        <button onclick="toggleUnits(event)" id="btnUnits" class="bg-blue-600 text-white py-2 px-6 rounded-xl font-black text-[10px] shadow-xl uppercase tracking-widest border-2 border-white hover:bg-blue-700 transition-all">
             SISTEMA: <span id="currentUnitText">KG / CM</span>
         </button>
     </div>
 
     <header class="flex flex-col items-center mb-6 no-print">
-        <div class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-right w-full max-w-6xl">Versión: 15 Abr 2026 - 02:45 PM (Fix Apertura)</div>
-        <h1 class="text-3xl font-black tracking-tighter uppercase italic text-center">PredictaCore Titán</h1>
+        <div class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-right w-full max-w-6xl">Actualización: 15 Abr 2026 - 02:15 PM</div>
+        <h1 class="text-3xl font-black tracking-tighter uppercase italic text-center text-gray-950">OXYHYPERBARIC INFRA BADAN 3.0</h1>
         <div class="h-1 w-20 bg-blue-600 mt-2"></div>
     </header>
 
     <main class="max-w-6xl mx-auto no-print">
         <div class="flex justify-between items-center mb-6 px-2">
             <button onclick="openNewClientModal()" class="titan-btn px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg">+ NUEVO PACIENTE</button>
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar por nombre..." class="bg-white border-none rounded-xl px-4 py-3 text-sm w-80 shadow-sm ring-1 ring-gray-100">
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar paciente..." class="bg-white border-none rounded-xl px-4 py-3 text-sm w-80 shadow-sm ring-1 ring-gray-100">
         </div>
 
         <div class="predicta-card overflow-hidden">
@@ -127,7 +128,7 @@
                 </div>
 
                 <div class="predicta-card p-8 border-2 border-gray-50 mb-8">
-                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4 italic text-center">RUTA CRÍTICA HACIA EL ÉXITO (PRONÓSTICO CLÍNICO)</h3>
+                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4 italic text-center">RUTA HACIA EL PESO SALUDABLE (PRONÓSTICO CLÍNICO)</h3>
                     <div class="h-[300px] w-full">
                         <canvas id="progressChart"></canvas>
                     </div>
@@ -202,7 +203,7 @@
         const grasaActual = parseFloat(p.grasa) / 100;
         const masaMagra = pesoKG * (1 - grasaActual);
         
-        // META DE SALUD: Hombres (18-20%), Mujeres (25-28%) ajustado por edad
+        // META DE SALUD AUTOMÁTICA
         let grasaObjetivo = (p.sexo === 'Masculino' ? 0.18 : 0.25);
         if (p.edad > 50) grasaObjetivo += 0.02;
         
@@ -271,7 +272,6 @@
         unitMode = unitMode === 'KG' ? 'LB' : 'KG';
         document.getElementById('currentUnitText').innerText = unitMode === 'KG' ? 'KG / CM' : 'LB / IN';
         renderTable(globalData);
-        // FIX DE APERTURA: Solo re-abre el paciente si el modal ya estaba visible
         if(currentPatient && document.getElementById('modalDetalle').style.display === 'block') {
             selectPatient(currentPatient);
         }
