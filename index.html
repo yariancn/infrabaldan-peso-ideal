@@ -8,24 +8,22 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; overflow-x: hidden; font-size: 14px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; font-size: 14px; }
         .predicta-card { background: white; border-radius: 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
         .titan-btn:hover { background: #334155; transform: translateY(-1px); }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; width: 100%; outline: none; }
         
-        /* CONTROL DE CAPAS */
         #modalDetalle, #modalNuevo { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); }
-        .modal-content { background: white; width: 92vw; max-width: 1200px; height: 88vh; margin: 6vh auto; border-radius: 40px; overflow-y: auto; position: relative; }
+        .modal-content { background: white; width: 92vw; max-width: 1250px; height: 90vh; margin: 5vh auto; border-radius: 40px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 20px 40px; border-bottom: 1px solid #f1f5f9; }
 
-        /* IMPRESIÓN EN UNA SOLA HOJA */
         @media print {
             @page { size: auto; margin: 5mm; }
             .no-print, .unit-control, button, input { display: none !important; }
             body { background: white !important; padding: 0 !important; }
             #modalDetalle { display: block !important; position: static !important; background: white !important; }
-            .modal-content { width: 100% !important; max-width: none !important; margin: 0 !important; height: auto !important; border: none !important; padding: 0 !important; overflow: visible !important; }
+            .modal-content { width: 100% !important; max-width: none !important; margin: 0 !important; height: auto !important; border: none !important; padding: 10px !important; overflow: visible !important; }
             .predicta-card { box-shadow: none !important; border: 1px solid #eee !important; page-break-inside: avoid; border-radius: 15px; }
             canvas { max-width: 100% !important; height: 280px !important; }
         }
@@ -34,13 +32,12 @@
 <body class="antialiased p-4">
 
     <div class="fixed top-6 right-8 z-[110] no-print">
-        <button onclick="toggleUnits(event)" id="btnUnits" class="bg-blue-600 text-white py-2 px-6 rounded-xl font-black text-[10px] shadow-xl uppercase tracking-widest border-2 border-white hover:bg-blue-700 transition-all">
+        <button onclick="toggleUnits(event)" id="btnUnits" class="bg-blue-600 text-white py-2 px-6 rounded-xl font-black text-[10px] shadow-xl uppercase tracking-widest border-2 border-white hover:bg-blue-700">
             SISTEMA: <span id="currentUnitText">KG / CM</span>
         </button>
     </div>
 
     <header class="flex flex-col items-center mb-6 no-print">
-        <div class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-right w-full max-w-6xl">Actualización: 15 Abr 2026 - 02:15 PM</div>
         <h1 class="text-3xl font-black tracking-tighter uppercase italic text-center text-gray-950">OXYHYPERBARIC INFRA BADAN 3.0</h1>
         <div class="h-1 w-20 bg-blue-600 mt-2"></div>
     </header>
@@ -68,10 +65,10 @@
     </main>
 
     <div id="modalNuevo">
-        <div class="modal-content max-w-2xl h-auto p-10 mt-[10vh]">
+        <div class="modal-content max-w-2xl h-auto p-10 mt-[8vh]">
             <button onclick="closeNewClientModal()" class="absolute top-6 right-8 text-gray-300 hover:text-black text-2xl font-light">✕</button>
             <h2 class="text-2xl font-black uppercase italic tracking-tighter mb-8 border-l-4 border-blue-600 pl-4 text-gray-950">Alta de Paciente</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="text" id="newID" class="input-titan" placeholder="ID Manual">
                 <input type="text" id="newName" class="input-titan" placeholder="Nombre Completo">
                 <input type="number" id="newAge" class="input-titan" placeholder="Edad">
@@ -80,40 +77,40 @@
                 <input type="number" id="newWeight" class="input-titan" placeholder="Peso Inicial">
                 <input type="number" id="newFat" class="input-titan" placeholder="% Grasa Actual">
             </div>
-            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-xl mt-8 uppercase tracking-widest text-xs shadow-xl">Crear Expediente</button>
+            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-xl mt-8 uppercase tracking-widest text-xs shadow-xl italic">Sincronizar con Google Sheets</button>
         </div>
     </div>
 
     <div id="modalDetalle">
         <div class="modal-content">
             <div class="sticky-header flex justify-between items-center no-print">
-                <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">← VOLVER AL LISTADO</button>
+                <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:opacity-70">← REGRESAR</button>
                 <div class="flex gap-3">
-                    <button onclick="window.print()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg">🖨️ IMPRIMIR REPORTE (1 PÁG)</button>
+                    <button onclick="window.print()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg italic">🖨️ IMPRIMIR REPORTE CLÍNICO</button>
                     <button onclick="closeModal()" class="text-gray-300 hover:text-black text-3xl leading-none">✕</button>
                 </div>
             </div>
 
-            <div class="px-12 py-8">
-                <header class="flex justify-between items-start mb-8 border-b pb-8">
+            <div class="px-12 py-6">
+                <header class="flex justify-between items-start mb-6 border-b pb-6">
                     <div>
-                        <h2 id="modalNombre" class="text-4xl font-black tracking-tighter italic uppercase text-gray-950">PACIENTE</h2>
-                        <p id="modalInfo" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">--</p>
+                        <h2 id="modalNombre" class="text-4xl font-black tracking-tighter italic uppercase text-gray-950 leading-none">PACIENTE</h2>
+                        <p id="modalInfo" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">--</p>
                     </div>
                     <div class="text-right">
                         <div class="bg-blue-600 text-white px-8 py-4 rounded-[25px] shadow-lg mb-2">
-                            <p class="text-[9px] uppercase font-bold opacity-80 italic">Peso Ideal Salud</p>
+                            <p class="text-[9px] uppercase font-bold opacity-80 italic">Meta de Salud</p>
                             <p id="targetWeightDisplay" class="text-2xl font-black italic">--</p>
                         </div>
                         <p id="prognosisBadge" class="text-[10px] font-black text-blue-600 uppercase italic">--</p>
                     </div>
                 </header>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div class="bg-gray-50 p-6 rounded-[30px] border border-gray-100">
                         <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Masa Magra (Motor)</p>
                         <p id="muscleMass" class="text-2xl font-black text-slate-800">--</p>
-                        <p class="text-[8px] text-gray-400 mt-2 leading-tight">Tejido activo que protege tu metabolismo basal.</p>
+                        <p class="text-[8px] text-gray-400 mt-2 leading-tight">Tejido activo que protege tu metabolismo.</p>
                     </div>
                     <div class="bg-gray-50 p-6 rounded-[30px] border border-gray-100 text-center">
                         <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic text-center">Grasa Visceral</p>
@@ -121,25 +118,26 @@
                         <p id="visceralStatus" class="text-[9px] font-bold mt-2 uppercase">--</p>
                     </div>
                     <div class="bg-gray-950 p-6 rounded-[30px] text-white text-center">
-                        <p class="text-[10px] font-black text-blue-400 uppercase mb-1 italic text-center">Gasto Basal (BMR)</p>
+                        <p class="text-[10px] font-black text-blue-400 uppercase mb-1 italic text-center">Gasto BMR (kcal)</p>
                         <p id="displayBMR" class="text-2xl font-black text-white">--</p>
-                        <p class="text-[8px] text-gray-500 mt-2 leading-tight">Energía que tu cuerpo quema en reposo total.</p>
+                        <p class="text-[8px] text-gray-500 mt-2 leading-tight">Consumo calórico basal en reposo.</p>
                     </div>
                 </div>
 
-                <div class="predicta-card p-8 border-2 border-gray-50 mb-8">
-                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4 italic text-center">RUTA HACIA EL PESO SALUDABLE (PRONÓSTICO CLÍNICO)</h3>
-                    <div class="h-[300px] w-full">
+                <div class="predicta-card p-6 border-2 border-gray-50 mb-6">
+                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4 italic text-center italic">INFRA BADAN 3.0: RUTA HACIA EL ÉXITO CLÍNICO</h3>
+                    <div class="h-[280px] w-full">
                         <canvas id="progressChart"></canvas>
                     </div>
                 </div>
 
                 <div class="bg-slate-50 p-8 rounded-[35px] no-print">
-                    <h3 class="text-[10px] font-black uppercase mb-4 text-blue-600 tracking-widest italic text-center">REGISTRAR AVANCE DE SESIÓN</h3>
-                    <div class="flex gap-4 items-end">
-                        <div class="flex-1"><label class="text-[9px] font-bold text-gray-400 uppercase block mb-1 ml-1">Peso</label><input type="number" id="sessWeight" class="input-titan shadow-sm" placeholder="0.0"></div>
-                        <div class="flex-1"><label class="text-[9px] font-bold text-gray-400 uppercase block mb-1 ml-1">% Grasa</label><input type="number" id="sessFat" class="input-titan shadow-sm" placeholder="0.0"></div>
-                        <button onclick="addSession()" class="titan-btn px-10 py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-xl">ACTUALIZAR</button>
+                    <h3 class="text-[10px] font-black uppercase mb-4 text-blue-600 tracking-widest italic text-center">ACTUALIZAR SESIÓN / WYZE SCALE</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="col-span-1"><label class="text-[9px] font-bold text-gray-400 uppercase block mb-1 ml-1 italic">Peso</label><input type="number" id="sessWeight" class="input-titan" placeholder="0.0"></div>
+                        <div class="col-span-1"><label class="text-[9px] font-bold text-gray-400 uppercase block mb-1 ml-1 italic">% Grasa</label><input type="number" id="sessFat" class="input-titan" placeholder="0.0"></div>
+                        <div class="col-span-1"><label class="text-[9px] font-bold text-gray-400 uppercase block mb-1 ml-1 italic">Notas</label><input type="text" id="sessNotes" class="input-titan" placeholder="..."></div>
+                        <button onclick="addSession()" class="titan-btn px-10 py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-xl italic">ACTUALIZAR</button>
                     </div>
                 </div>
             </div>
@@ -147,7 +145,8 @@
     </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDoLVyWiec97znQtUqPMyX1Bg_6ztEqWPliJ6w-LVi3N_8qsLMGkAaFoeQJI5Yqzzu/exec";
+    // URL SINCRONIZADA CON TU NUEVA IMPLEMENTACIÓN
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwNScF_fGnZnJHa2QqFFqzygoIMA-YMF8Dz_LctC7QuzNZ0t90_0vWc592v0Eqki92A/exec";
     let unitMode = 'KG';
     let chartInstance = null;
     let globalData = [];
@@ -158,7 +157,7 @@
             const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
             globalData = await res.json();
             renderTable(globalData);
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Error al cargar datos:", e); }
     }
 
     function convP(val) {
@@ -177,16 +176,15 @@
         tbody.innerHTML = '';
         data.forEach(p => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-blue-50 cursor-pointer transition-all border-b border-gray-100 group";
+            tr.className = "hover:bg-blue-50 cursor-pointer border-b border-gray-100 group transition-all";
             tr.onclick = (e) => { 
-                if(e.target.closest('button') || e.target.id === 'btnUnits') return;
+                if(e.target.id === 'btnUnits' || e.target.parentElement.id === 'btnUnits') return;
                 selectPatient(p); 
             };
-            tr.innerHTML = `
-                <td class="px-6 py-4 text-[9px] font-black text-gray-300 uppercase italic">${p.id}</td>
-                <td class="px-6 py-4 font-black text-gray-900 group-hover:text-blue-600 uppercase italic">${p.nombre}</td>
+            tr.innerHTML = `<td class="px-6 py-4 text-[9px] font-black text-gray-300 uppercase italic">${p.id}</td>
+                <td class="px-6 py-4 font-black text-gray-900 group-hover:text-blue-600 uppercase italic text-sm">${p.nombre}</td>
                 <td class="px-6 py-4 text-center text-[9px] text-gray-400 font-bold uppercase">${p.sexo} | ${p.edad} años | ${convA(p.altura)}</td>
-                <td class="px-6 py-4 text-center font-black text-blue-600 italic">${convP(p.peso)} ${unitMode}</td>
+                <td class="px-6 py-4 text-center font-black text-blue-600 italic text-sm">${convP(p.peso)} ${unitMode}</td>
                 <td class="px-6 py-4 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
         });
@@ -203,7 +201,6 @@
         const grasaActual = parseFloat(p.grasa) / 100;
         const masaMagra = pesoKG * (1 - grasaActual);
         
-        // META DE SALUD AUTOMÁTICA
         let grasaObjetivo = (p.sexo === 'Masculino' ? 0.18 : 0.25);
         if (p.edad > 50) grasaObjetivo += 0.02;
         
@@ -217,7 +214,7 @@
         document.getElementById('muscleMass').innerText = `${convP(masaMagra)} ${unitMode}`;
         document.getElementById('displayBMR').innerText = Math.round(370 + (21.6 * masaMagra));
         
-        const gv = p.grasaVisceral || "--";
+        const gv = p.visceral || "--";
         document.getElementById('visceralFat').innerText = gv;
         const gvS = document.getElementById('visceralStatus');
         if (gv === "--") {
@@ -259,7 +256,7 @@
             data: {
                 labels: metaData.map((_, i) => `S${i+1}`),
                 datasets: [
-                    { label: 'REAL', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 6, pointRadius: 5, backgroundColor: '#2563eb' },
+                    { label: 'REAL', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 5, pointRadius: 5, backgroundColor: '#2563eb' },
                     { label: 'META', data: metaData, borderColor: '#cbd5e1', borderDash: [6,6], tension: 0, pointRadius: 0 }
                 ]
             },
@@ -272,9 +269,7 @@
         unitMode = unitMode === 'KG' ? 'LB' : 'KG';
         document.getElementById('currentUnitText').innerText = unitMode === 'KG' ? 'KG / CM' : 'LB / IN';
         renderTable(globalData);
-        if(currentPatient && document.getElementById('modalDetalle').style.display === 'block') {
-            selectPatient(currentPatient);
-        }
+        if(currentPatient && document.getElementById('modalDetalle').style.display === 'block') selectPatient(currentPatient);
     }
 
     function closeModal() { document.getElementById('modalDetalle').style.display = 'none'; document.body.style.overflow = 'auto'; }
@@ -282,18 +277,13 @@
     function closeNewClientModal() { document.getElementById('modalNuevo').style.display = 'none'; }
 
     async function saveNewClient() {
-        const pRaw = parseFloat(document.getElementById('newWeight').value);
-        const hRaw = parseFloat(document.getElementById('newHeight').value);
-        let pKG = unitMode === 'LB' ? pRaw / 2.20462 : pRaw;
-        let hCM = unitMode === 'LB' ? hRaw * 2.54 : hRaw;
-
         const cliente = {
             id: document.getElementById('newID').value,
             nombre: document.getElementById('newName').value,
             sexo: document.getElementById('newGender').value,
             edad: document.getElementById('newAge').value,
-            altura: hCM.toFixed(0),
-            peso: pKG.toFixed(2),
+            altura: document.getElementById('newHeight').value,
+            peso: document.getElementById('newWeight').value,
             grasa: document.getElementById('newFat').value,
             fechaInicio: new Date().toISOString()
         };
@@ -302,12 +292,11 @@
     }
 
     async function addSession() {
-        const pRaw = parseFloat(document.getElementById('sessWeight').value);
-        if(!pRaw || !currentPatient) return;
-        let pKG = unitMode === 'LB' ? pRaw / 2.20462 : pRaw;
         const avance = { 
             id: currentPatient.id, fecha: new Date().toISOString(), 
-            peso: pKG.toFixed(2), grasa: document.getElementById('sessFat').value || 0 
+            peso: document.getElementById('sessWeight').value, 
+            grasa: document.getElementById('sessFat').value || 0,
+            notas: document.getElementById('sessNotes').value || ""
         };
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
         closeModal(); fetchData();
@@ -318,7 +307,6 @@
         const rows = document.querySelectorAll('#clientTableBody tr');
         rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none');
     }
-    
     window.onload = fetchData;
 </script>
 </body>
