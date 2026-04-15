@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictaCore Titán</title>
+    <title>PredictaCore Titán - OxyHyperbaric</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .main-logo { height: 120px !important; width: auto !important; min-height: 120px !important; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .titan-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
     </style>
 </head>
 <body class="antialiased text-gray-900">
@@ -24,29 +24,29 @@
     </header>
 
     <section class="bg-white rounded-[40px] shadow-2xl p-8 mb-8 border border-gray-100">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Panel de Control / Nuevo Registro</h2>
-            <input type="text" id="searchInput" onkeyup="filterClients()" placeholder="🔍 Buscar paciente..." 
-                   class="bg-gray-50 border-none rounded-2xl px-6 py-2 text-sm w-64 focus:ring-2 focus:ring-blue-500">
+        <div class="flex justify-between items-center mb-6 px-2">
+            <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nuevo Registro / Clinical Input</h2>
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar por nombre..." 
+                   class="bg-gray-50 border-none rounded-2xl px-6 py-2 text-sm w-64 focus:ring-2 focus:ring-blue-500 shadow-sm">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <input type="text" id="newName" placeholder="Nombre" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
-            <input type="number" id="newWeight" placeholder="Peso" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="newName" placeholder="Nombre Completo" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
+            <input type="number" id="newWeight" placeholder="Peso (KG)" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
             <input type="number" id="newAge" placeholder="Edad" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500">
-            <select id="newGender" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500 text-gray-500">
+            <select id="newGender" class="bg-gray-50 p-4 rounded-2xl border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500 text-gray-500 font-bold">
                 <option value="Masculino">Masculino</option>
                 <option value="Femenino">Femenino</option>
             </select>
-            <button onclick="saveNewClient()" class="bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 transition-all uppercase tracking-widest shadow-lg shadow-blue-200">
-                Guardar
+            <button onclick="saveNewClient()" class="titan-gradient text-white font-black py-4 rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest shadow-lg shadow-gray-200">
+                Guardar Perfil
             </button>
         </div>
     </section>
 
     <div class="flex justify-end mb-6 px-4">
         <button onclick="toggleUnits(event)" class="bg-white border-2 border-gray-100 hover:border-blue-500 text-gray-800 font-bold py-3 px-8 rounded-2xl transition-all shadow-sm">
-            Unidades: <span id="currentUnitText" class="text-blue-600">KG</span>
+            Unidades: <span id="currentUnitText" class="text-blue-600 uppercase">KG</span>
         </button>
     </div>
 
@@ -55,28 +55,31 @@
             <thead class="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400 font-black">
                 <tr>
                     <th class="px-10 py-6">Paciente</th>
-                    <th class="px-10 py-6 text-center">Info Base</th>
+                    <th class="px-10 py-6 text-center">Perfil</th>
                     <th class="px-10 py-6 text-center">Último Peso</th>
-                    <th class="px-10 py-6 text-right">Acción</th>
+                    <th class="px-10 py-6 text-right">Detalle</th>
                 </tr>
             </thead>
-            <tbody id="clientTableBody" class="divide-y divide-gray-50">
+            <tbody id="clientTableBody" class="divide-y divide-gray-50 italic">
                 </tbody>
         </table>
     </div>
 </div>
 
 <div id="modalDetalle" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white w-full max-w-5xl rounded-[50px] p-10 max-h-[90vh] overflow-y-auto relative shadow-2xl">
+    <div class="bg-white w-full max-w-5xl rounded-[50px] p-10 max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-100">
         <button onclick="closeModal()" class="absolute top-8 right-10 text-gray-300 hover:text-black text-3xl font-light">✕</button>
         
         <header class="mb-10">
-            <h2 id="modalNombre" class="text-4xl font-black text-gray-900 tracking-tighter italic">Nombre del Paciente</h2>
-            <p id="modalInfoMeta" class="text-xs font-bold text-gray-400 uppercase mt-2 tracking-widest">Masculino • 45 años • Altura: 175cm</p>
+            <h2 id="modalNombre" class="text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Paciente</h2>
+            <div id="modalMeta" class="flex space-x-4 mt-2">
+                <span id="badgeGender" class="px-3 py-1 bg-blue-100 text-blue-600 text-[10px] font-black rounded-full uppercase">--</span>
+                <span id="badgeAge" class="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-black rounded-full uppercase">-- Años</span>
+            </div>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-blue-50 p-8 rounded-[35px] border border-blue-100">
+            <div class="bg-blue-50 p-8 rounded-[35px] border border-blue-100 shadow-sm">
                 <p class="text-[10px] font-bold text-blue-500 uppercase mb-1">Target Fat %</p>
                 <div id="targetFat" class="text-2xl font-black text-gray-800">--%</div>
             </div>
@@ -85,100 +88,121 @@
                 <div id="optimalFFMI" class="text-2xl font-black text-gray-800">--</div>
             </div>
             <div class="bg-gray-900 p-8 rounded-[35px] text-white">
-                <p class="text-[10px] font-bold text-blue-400 uppercase mb-1">Metabolic Age</p>
-                <div id="metabolicAge" class="text-2xl font-black">Análisis...</div>
+                <p class="text-[10px] font-bold text-blue-400 uppercase mb-1">Metabolic Age Status</p>
+                <div id="metabolicAge" class="text-2xl font-black">Analyzing...</div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div class="bg-white border border-gray-100 p-8 rounded-[35px] shadow-sm">
-                <h3 class="font-bold text-sm uppercase mb-6 tracking-widest">Registrar nueva sesión</h3>
-                <div class="flex flex-col space-y-4">
-                    <input type="number" id="sessionWeight" placeholder="Peso hoy" class="bg-gray-50 p-4 rounded-2xl border-none">
-                    <input type="number" id="sessionFat" placeholder="% Grasa (opcional)" class="bg-gray-50 p-4 rounded-2xl border-none">
-                    <button onclick="saveSession()" class="bg-black text-white py-4 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-gray-800 transition-all">Registrar Avance</button>
+                <h3 class="font-bold text-xs uppercase mb-6 tracking-widest text-gray-400">Capturar Nueva Sesión</h3>
+                <div class="space-y-4">
+                    <input type="number" id="sessionWeight" placeholder="Peso hoy" class="w-full bg-gray-50 p-4 rounded-2xl border-none">
+                    <button onclick="saveSession()" class="w-full titan-gradient text-white py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Registrar Progreso</button>
                 </div>
             </div>
-            
-            <div class="bg-white border border-gray-100 p-8 rounded-[35px] shadow-sm flex flex-col items-center justify-center">
-                <p class="text-gray-300 font-bold uppercase text-[10px] mb-4 tracking-widest">Gráfica de Progreso</p>
-                <div class="h-48 w-full bg-gray-50 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200">
-                    <span class="text-gray-400 text-[10px]">Histórico de pérdida de peso</span>
-                </div>
+            <div class="bg-gray-50 rounded-[35px] flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200">
+                <span class="text-[10px] font-bold text-gray-300 uppercase italic">Gráfica de Tendencia en Desarrollo</span>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// --- CONFIGURACIÓN DE CONEXIÓN ---
+const DEPLOY_ID = "AKfycbyfTBe73GaXzem3p08rDd6N5ebXgBt2EROVx6HbrMrPATX2a8bbkoPiV1PhyifbjUU6";
 let unitMode = 'KG';
-let activeClient = null;
 
-// 1. CONVERSIÓN DE UNIDADES (CORREGIDA)
+window.onload = () => {
+    fetchData(); // Carga automática al iniciar
+};
+
+// 1. OBTENER DATOS (READ)
+function fetchData() {
+    console.log("Cargando base de datos...");
+    google.script.run
+        .withSuccessHandler(renderTable)
+        .obtenerClientes(); // Esta función debe estar en tu .gs
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('clientTableBody');
+    tbody.innerHTML = '';
+    data.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-blue-50 cursor-pointer transition-all border-b border-gray-50";
+        tr.onclick = () => selectClient(p);
+        tr.innerHTML = `
+            <td class="px-10 py-6 font-bold text-gray-900">${p.nombre}</td>
+            <td class="px-10 py-6 text-center text-[10px] text-gray-400 font-black uppercase">${p.sexo} | ${p.edad} años</td>
+            <td class="px-10 py-6 text-center font-black text-blue-600">${p.peso} KG</td>
+            <td class="px-10 py-6 text-right text-blue-300 font-light">➔</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// 2. CAMBIO DE UNIDADES (CORREGIDO)
 function toggleUnits(e) {
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation(); // Evita que se abra el cliente accidentalmente
-    }
+    if(e) { e.preventDefault(); e.stopPropagation(); }
     unitMode = (unitMode === 'KG') ? 'LB' : 'KG';
     document.getElementById('currentUnitText').innerText = unitMode;
-    
-    // Actualizamos el placeholder del registro nuevo para evitar errores
-    document.getElementById('newWeight').placeholder = `Peso (${unitMode})`;
+    document.getElementById('newWeight').placeholder = `Peso en ${unitMode}`;
 }
 
-// 2. GUARDAR CLIENTE NUEVO (CON CONVERSIÓN A KG)
+// 3. GUARDAR NUEVO (CREATE) CON CONVERSIÓN
 function saveNewClient() {
     const nombre = document.getElementById('newName').value;
-    const pesoRaw = parseFloat(document.getElementById('newWeight').value);
+    let pesoInput = parseFloat(document.getElementById('newWeight').value);
     const edad = document.getElementById('newAge').value;
-    const genero = document.getElementById('newGender').value;
+    const sexo = document.getElementById('newGender').value;
 
-    if (!nombre || !pesoRaw) return alert("Nombre y Peso obligatorios.");
+    if (!nombre || isNaN(pesoInput)) return alert("Datos incompletos");
 
-    // Convertimos a KG si está en Libras antes de enviar a Sheets
-    let pesoFinal = (unitMode === 'LB') ? pesoRaw / 2.20462 : pesoRaw;
+    // Siempre guardamos en KG para que la base de datos no sea un caos
+    let pesoFinal = (unitMode === 'LB') ? pesoInput / 2.20462 : pesoInput;
 
-    const payload = {
-        nombre,
-        peso: pesoFinal.toFixed(2),
-        edad,
-        sexo: genero,
-        fecha: new Date().toLocaleDateString()
+    const payload = { 
+        nombre, 
+        peso: pesoFinal.toFixed(2), 
+        edad, 
+        sexo,
+        id: Date.now() 
     };
 
-    console.log("Enviando a Sheets en KG:", payload);
-    // Aquí reconectamos con tu script: google.script.run.addNewClient(payload);
-    alert("Perfil creado exitosamente.");
+    google.script.run.withSuccessHandler(() => {
+        alert("Paciente Guardado");
+        fetchData(); // Refrescar lista
+    }).addNewClient(payload);
 }
 
-// 3. SELECCIÓN Y CÁLCULOS DINÁMICOS POR CLIENTE
-function selectClient(cliente) {
-    activeClient = cliente;
-    document.getElementById('modalNombre').innerText = cliente.nombre;
-    document.getElementById('modalInfoMeta').innerText = `${cliente.sexo} • ${cliente.edad} años • Peso inicial: ${cliente.peso} KG`;
-    
-    // Cálculos de Referencia según Género
-    if (cliente.sexo === 'Masculino') {
+// 4. DETALLE DE CLIENTE (CÁLCULOS DINÁMICOS)
+function selectClient(p) {
+    document.getElementById('modalNombre').innerText = p.nombre;
+    document.getElementById('badgeGender').innerText = p.sexo;
+    document.getElementById('badgeAge').innerText = p.edad + " Años";
+
+    // Lógica científica según sexo
+    if (p.sexo === 'Masculino') {
         document.getElementById('targetFat').innerText = "14% - 22%";
-        document.getElementById('optimalFFMI').innerText = "20.0 - 22.0";
+        document.getElementById('optimalFFMI').innerText = "20.5 - 22.0";
     } else {
         document.getElementById('targetFat').innerText = "21% - 31%";
-        document.getElementById('optimalFFMI').innerText = "17.0 - 19.0";
+        document.getElementById('optimalFFMI').innerText = "17.5 - 19.5";
     }
-    
+
     document.getElementById('modalDetalle').classList.remove('hidden');
 }
 
-function closeModal() {
-    document.getElementById('modalDetalle').classList.add('hidden');
-}
+function closeModal() { document.getElementById('modalDetalle').classList.add('hidden'); }
 
-function filterClients() {
-    const term = document.getElementById('searchInput').value.toLowerCase();
-    // Lógica para filtrar filas de la tabla
+function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#clientTableBody tr');
+    rows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
 }
 </script>
-
 </body>
 </html>
