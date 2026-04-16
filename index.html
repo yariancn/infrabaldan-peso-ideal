@@ -39,7 +39,7 @@
 
     <main class="max-w-5xl mx-auto no-print">
         <div class="flex justify-between items-center mb-5 px-2">
-            <button onclick="openNewClientModal()" class="titan-btn px-5 py-2.5 rounded-xl text-[9px] uppercase tracking-widest">+ NUEVO PACIENTE</button>
+            <button onclick="openNewClientModal()" class="titan-btn px-5 py-2.5 rounded-xl text-[9px] uppercase tracking-widest">+ NUEVO REGISTRO</button>
             <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar..." class="bg-white border-none rounded-xl px-4 py-2 text-sm w-72 shadow-sm ring-1 ring-gray-100">
         </div>
         <div class="predicta-card overflow-hidden">
@@ -117,7 +117,7 @@
     </div>
 
 <script>
-    // URL DE TU SERVIDOR ACTUAL
+    // PEGA AQUÍ TU NUEVA URL DE IMPLEMENTACIÓN
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwNScF_fGnZnJHa2QqFFqzygoIMA-YMF8Dz_LctC7QuzNZ0t90_0vWc592v0Eqki92A/exec";
     let unitMode = 'KG', chartInstance = null, globalData = [], currentPatient = null;
 
@@ -128,7 +128,6 @@
     function convP(val) { val = parseFloat(val); return unitMode === 'LB' ? (val * 2.20462).toFixed(1) : val.toFixed(1); }
     function convA(val) { val = parseFloat(val); return unitMode === 'LB' ? (val / 2.54).toFixed(1) + " IN" : val.toFixed(0) + " CM"; }
 
-    // FÓRMULA CIENTÍFICA (SALUD METABÓLICA)
     function getIdealFat(age, gender) {
         let base = gender === 'Masculino' ? 15 : 22;
         let adjustment = Math.floor((age - 20) / 10) * 1.5;
@@ -147,7 +146,7 @@
             tr.innerHTML = `<td class="px-6 py-3 text-[8px] font-black text-gray-300 uppercase italic">${p.id}</td>
                 <td class="px-6 py-3 font-black text-gray-900 uppercase italic text-xs">${p.nombre}</td>
                 <td class="px-6 py-3 text-center text-[8px] text-gray-400 font-bold uppercase">${p.sexo} | ${p.edad} años | ${convA(p.altura)}</td>
-                <td class="px-6 py-3 text-center font-black text-blue-600 italic text-xs">${convP(p.peso)} ${unitMode}</td>
+                <td class="px-6 py-3 text-center font-black text-blue-600 italic text-xs">${convP(p.weight || p.peso)} ${unitMode}</td>
                 <td class="px-6 py-3 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
         });
@@ -159,17 +158,17 @@
         document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}`;
         
         const pesoKG = parseFloat(p.peso), grasaActual = parseFloat(p.grasa) / 100, masaMagra = pesoKG * (1 - grasaActual);
-        
-        // FÓRMULA AUTOMÁTICA DE SALUD
         const grasaObjetivo = getIdealFat(p.edad, p.sexo);
         const targetWeightKG = masaMagra / (1 - grasaObjetivo);
         const deficitKG = pesoKG - targetWeightKG;
-        const totalSesiones = Math.ceil(deficitKG / 0.453); // 1lb por sesión
+        const totalSesiones = Math.ceil(deficitKG / 0.453);
 
         document.getElementById('targetWeightDisplay').innerText = `${convP(targetWeightKG)} ${unitMode}`;
         document.getElementById('prognosisBadge').innerText = `${totalSesiones} SESIONES | ${Math.ceil(totalSesiones/2)} SEMANAS PARA META`;
         document.getElementById('muscleMass').innerText = `${convP(masaMagra)} ${unitMode}`;
         document.getElementById('displayBMR').innerText = Math.round(370 + (21.6 * masaMagra));
+        
+        // El reporte ahora muestra "--" si el dato de grasa visceral no existe en la tabla
         document.getElementById('visceralFat').innerText = p.visceral || "--";
         
         initChart(p, targetWeightKG);
